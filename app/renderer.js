@@ -1,0 +1,1 @@
+const {ipcRenderer, shell} = electron;

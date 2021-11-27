@@ -1,0 +1,19 @@
+{
+  "name": "loldetect",
+  "version": "1.0.0",
+  "description": "Analyzer that detects enemies around your main window",
+  "main": "./app/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "olesgeras",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^16.0.2"
+  },
+  "dependencies": {
+    "image-pixels": "^2.2.2",
+    "keysender": "^1.6.5"
+  }
+}
