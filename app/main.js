@@ -6,24 +6,27 @@ const {runApp} = require('./bot.js');
 let win;
 const createWindow = exports.createWindow = () => {
   win = new BrowserWindow({
-    width: 50,
-    height: 50,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
-    },
+    fullscreen: true,
     show: false,
+    webPreferences: {
+      contextIsolation: false,
+  	  nodeIntegration: true
+    },
     frame: false,
+    transparent: true
   })
 
   win.loadFile('./app/index.html')
-  win.once('ready-to-show', () => {
-    win.show();
-  });
   win.setAlwaysOnTop(true);
   win.setFocusable(false);
   win.setResizable(false);
   win.setClosable(false);
+  win.setIgnoreMouseEvents(true);
   win.removeMenu();
+
+  win.once('ready-to-show', () => {
+    win.show();
+  })
 }
 
 app.whenReady().then(() => {
