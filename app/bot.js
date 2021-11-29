@@ -156,18 +156,37 @@ const isEnemy = (rgb, {x, y}) => {
   return true;
 };
 
+const findSide = (area, {x, y}) => {
+  let side = new Vec(0, 0);
 
-const isViewScreen = (rgb, {x, y}) => {
+  if(x > area.width / 2) {
+     side.x = 1
+   } else {
+     side.x = -1
+   };
 
-  for(let z = x; x < z + 10; x++) {
-    let point = new Vec(x, y);
+  if(y > area.height / 2) {
+    side.y = 1;
+  } else {
+    side.y = -1;
+  }
+
+  return side;
+};
+
+const isViewScreen = (rgb, start) => {
+  let side = findSide(rgb, start);
+
+
+  for(let x = start.x; x != start.x + (side.x * 10); x += side.x) {
+    let point = new Vec(x, start.y);
     if(!rgb.checkAround(point, isWhite, 1)) {
       return false;
     }
   }
 
-  for(let c = y; y < c + 10; y++) {
-    let point = new Vec(x, y);
+  for(let y = start.y; y != start.y + (side.y * 10); y += side.y) {
+    let point = new Vec(start.x, y);
     if(!rgb.checkAround(point, isWhite, 1)) {
       return false;
     }
@@ -198,8 +217,6 @@ const alreadyVisible = (player, visible) => {
        return true;
      }
 };
-
-
 const checkLimit = (inner, outer) => {
   let x = Math.max(outer.x, inner.x);
   let y = Math.max(outer.y, inner.y);
@@ -210,6 +227,8 @@ const checkLimit = (inner, outer) => {
 
   return Display.create({x, y, width, height});
 };
+
+
 
 const startApp = async () => {
   const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
@@ -237,9 +256,10 @@ const startApp = async () => {
     for(;;) {
       const mapRgb = await map.getRgb();
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
+      console.log(viewScreen);
+      m.moveTo(map.x + viewScreen.x, map.y + viewScreen.y);
 
-      // viewScreenStart
-
+      process.exit();
       let mainScreen = Display.create({x: map.x + (viewScreen.x - size),
                                        y: map.y + (viewScreen.y - size),
                                        width: 80 + size * 2,
@@ -247,7 +267,7 @@ const startApp = async () => {
 
       mainScreen = checkLimit(mainScreen, map);
 
-      const visibleScreen = {x: size, y: size, width: 80, height: 46};
+      const visibleScreen = {x: size + 10, y: size + 10, width: 70, height: 36};
       const mainScreenRgb = await mainScreen.getRgb();
       let player = mainScreenRgb.findColor(isRed, isEnemy)
 
