@@ -175,15 +175,28 @@ const findSide = (area, {x, y}) => {
 };
 
 const isViewScreen = (rgb, start) => {
-  let side = findSide(rgb, start);
 
+  if(!isViewScreen.side) {
+    for(let x = start.x; x < start.x + 10; x++) {
+      let point = new Vec(x, start.y);
+      if(!rgb.checkAround(point, isWhite, 1)) {
+        return false;
+      }
+    }
 
+    isViewScreen.side = findSide(rgb, start);
+  }
+
+  let side = isViewScreen.side
+
+  console.log(side);
   for(let x = start.x; x != start.x + (side.x * 10); x += side.x) {
     let point = new Vec(x, start.y);
     if(!rgb.checkAround(point, isWhite, 1)) {
       return false;
     }
   }
+
 
   for(let y = start.y; y != start.y + (side.y * 10); y += side.y) {
     let point = new Vec(start.x, y);
@@ -194,6 +207,7 @@ const isViewScreen = (rgb, start) => {
 
   return true;
 };
+
 
 const relPos = ({x, y}, center, coof) => {
   x *= coof.x;
@@ -228,6 +242,20 @@ const checkLimit = (inner, outer) => {
   return Display.create({x, y, width, height});
 };
 
+const createMainScreen = (viewScreen, map, size) => {
+  const side = findSide(map, viewScreen);
+
+  const width = 80 + size * 2;
+  const height = 46 + size * 2;
+
+  const widthRel = side.x < 0 ? -width : 0;
+  const heightRel = side.y < 0 ? -height: 0;
+
+  let x = map.x + (viewScreen.x - size) + widthRel;
+  let y = map.y + (viewScreen.y - size) + heightRel;
+
+  return Display.create({x, y, width, height});
+};
 
 
 const startApp = async () => {
@@ -256,16 +284,13 @@ const startApp = async () => {
     for(;;) {
       const mapRgb = await map.getRgb();
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
-      console.log(viewScreen);
+
       m.moveTo(map.x + viewScreen.x, map.y + viewScreen.y);
+      process.exit()
 
-      process.exit();
-      let mainScreen = Display.create({x: map.x + (viewScreen.x - size),
-                                       y: map.y + (viewScreen.y - size),
-                                       width: 80 + size * 2,
-                                       height: 46 + size * 2});
-
+      let mainScreen = createMainScreen(viewScreen, map, size);
       mainScreen = checkLimit(mainScreen, map);
+
 
       const visibleScreen = {x: size + 10, y: size + 10, width: 70, height: 36};
       const mainScreenRgb = await mainScreen.getRgb();
