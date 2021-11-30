@@ -132,6 +132,14 @@ class Display {
     return new Rgb(whole, this.width, this.height);
   }
 
+  enlarge(size) {
+    let x = this.x - size;
+    let y = this.y - size;
+    let width = this.width + (size * 2);
+    let height = this.height + (size * 2);
+    return Display.create({x, y, width, height});
+  }
+
   static create(scr) {
     return new Display(scr);
   }
@@ -243,7 +251,7 @@ const checkLimit = (inner, outer) => {
 };
 
 const createMainScreen = (viewScreen, map) => {
-  const side = isViewScreen.side || findSide(map, viewScreen);
+  const side = isViewScreen.side;
 
   const width = 80;
   const height = 46;
@@ -273,7 +281,7 @@ const startApp = async () => {
   const display = Display.create(w.getView());
   const map = Display.create({x: 1606, y: 766, width: 314, height: 314});
   // const map = display.rel(.82, .72, .148, .264);
-  const size = 50;
+  const size = 40;
   if(test) {
     setInterval(() => {
       let {x, y} = m.getPos();
@@ -286,38 +294,28 @@ const startApp = async () => {
     for(;;) {
       const mapRgb = await map.getRgb();
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
+      let mainScreen = createMainScreen(viewScreen, map, size)
+      .enlarge(size);
 
 
-      let mainScreen = createMainScreen(viewScreen, map);
-
-      m.moveTo(mainScreen.x, mainScreen.y);
-      process.exit();
-
-      const visibleScreen = {x: size + 10, y: size + 10, width: 70, height: 36};
+      const visibleScreen = {x: size, y: size, width: 80, height: 46};
       const mainScreenRgb = await mainScreen.getRgb();
       let player = mainScreenRgb.findColor(isRed, isEnemy)
 
-
-      if(player) {
+      if(player && !alreadyVisible(player, visibleScreen)) {
           player = player.plus(new Vec(3, 10)); // adjust to center
-          if(!alreadyVisible(player, visibleScreen)) {
+          const pos = new Vec(player.x - ((80 + size * 2) / 2),
+                              player.y -((46 + size * 2) / 2));
 
-            const pos = new Vec(player.x - ((80 + size * 2) / 2),
-                                 player.y - ((46 + size *2) / 2));
+          let relCoof = {x: display.width / (80 + size * 2), y: display.height / (46 + size * 2)}
+          win.webContents.send('set-enemy', relPos(pos, display.center, relCoof));
 
-            let relCoof = {x: display.width / (80 + size * 2), y: display.height / (46 + size *2)}
-
-            win.webContents.send('set-enemy', relPos(pos, display.center, relCoof));
-
-          } else {
-            win.webContents.send('hide-enemy');
-          }
           //let {x, y} = new Vec(mainScreen.x + player.x, mainScreen.y + player.y);
           //m.moveTo(x, y);
       } else {
         win.webContents.send('hide-enemy');
       }
-      await sleep(150);
+      await sleep(50);
     }
   }
 }
