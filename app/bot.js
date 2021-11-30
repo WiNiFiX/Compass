@@ -189,7 +189,6 @@ const isViewScreen = (rgb, start) => {
 
   let side = isViewScreen.side
 
-  console.log(side);
   for(let x = start.x; x != start.x + (side.x * 10); x += side.x) {
     let point = new Vec(x, start.y);
     if(!rgb.checkAround(point, isWhite, 1)) {
@@ -231,6 +230,7 @@ const alreadyVisible = (player, visible) => {
        return true;
      }
 };
+
 const checkLimit = (inner, outer) => {
   let x = Math.max(outer.x, inner.x);
   let y = Math.max(outer.y, inner.y);
@@ -242,19 +242,21 @@ const checkLimit = (inner, outer) => {
   return Display.create({x, y, width, height});
 };
 
-const createMainScreen = (viewScreen, map, size) => {
-  const side = findSide(map, viewScreen);
+const createMainScreen = (viewScreen, map) => {
+  const side = isViewScreen.side || findSide(map, viewScreen);
 
-  const width = 80 + size * 2;
-  const height = 46 + size * 2;
+  const width = 80;
+  const height = 46;
 
   const widthRel = side.x < 0 ? -width : 0;
   const heightRel = side.y < 0 ? -height: 0;
 
-  let x = map.x + (viewScreen.x - size) + widthRel;
-  let y = map.y + (viewScreen.y - size) + heightRel;
+  let x = map.x + viewScreen.x + widthRel;
+  let y = map.y + viewScreen.y + heightRel;
 
-  return Display.create({x, y, width, height});
+  mainScreen = Display.create({x, y, width, height});
+
+  return checkLimit(mainScreen, map);
 };
 
 
@@ -285,16 +287,16 @@ const startApp = async () => {
       const mapRgb = await map.getRgb();
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
 
-      m.moveTo(map.x + viewScreen.x, map.y + viewScreen.y);
-      process.exit()
 
-      let mainScreen = createMainScreen(viewScreen, map, size);
-      mainScreen = checkLimit(mainScreen, map);
+      let mainScreen = createMainScreen(viewScreen, map);
 
+      m.moveTo(mainScreen.x, mainScreen.y);
+      process.exit();
 
       const visibleScreen = {x: size + 10, y: size + 10, width: 70, height: 36};
       const mainScreenRgb = await mainScreen.getRgb();
       let player = mainScreenRgb.findColor(isRed, isEnemy)
+
 
       if(player) {
           player = player.plus(new Vec(3, 10)); // adjust to center
@@ -315,7 +317,7 @@ const startApp = async () => {
       } else {
         win.webContents.send('hide-enemy');
       }
-      await sleep(50);
+      await sleep(150);
     }
   }
 }
