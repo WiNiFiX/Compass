@@ -212,6 +212,7 @@ const isViewScreen = (rgb, start) => {
     }
   }
 
+
   return true;
 };
 
@@ -264,6 +265,7 @@ const createMainScreen = (viewScreen, map) => {
 
   mainScreen = Display.create({x, y, width, height});
 
+  isViewScreen.side = null;
   return checkLimit(mainScreen, map);
 };
 
@@ -293,10 +295,10 @@ const startApp = async () => {
   } else {
     for(;;) {
       const mapRgb = await map.getRgb();
-      const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
+      const viewScreen = mapRgb.findColor(isWhite, isViewScreen); // viewScreen BUG
+      if(!viewScreen) {continue}
       let mainScreen = createMainScreen(viewScreen, map, size)
       .enlarge(size);
-
 
       const visibleScreen = {x: size, y: size, width: 80, height: 46};
       const mainScreenRgb = await mainScreen.getRgb();
