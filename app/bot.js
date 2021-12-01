@@ -1,7 +1,6 @@
 const {Virtual, Hardware, getAllWindows} = require('keysender');
 const pixels = require('image-pixels');
 
-
 // GLOBALS //
 
 let w, m, k, win;
@@ -114,8 +113,8 @@ class Display {
 
   async getRgb() {
     const captured = w.capture(this).data;
-    const {data: rgb} = await pixels(captured,
-                      {width: this.width, height: this.height});
+    let rgb = [];
+    for(let v of captured.values()) rgb.push(v);
 
     let whole = [];
     for (let y = 0, i = 0; y < this.height; y++) {
@@ -300,14 +299,14 @@ const startApp = async () => {
       let mainScreen = createMainScreen(viewScreen, map, size)
       .enlarge(size);
 
-      const visibleScreen = {x: size, y: size, width: 80, height: 46};
+      const visibleScreen = {x: size + 20, y: size + 20, width: 40, height: 36};
       const mainScreenRgb = await mainScreen.getRgb();
       let player = mainScreenRgb.findColor(isRed, isEnemy)
+      player = player && player.plus(new Vec(3, 10)); // adjust to center
 
       if(player && !alreadyVisible(player, visibleScreen)) {
-          player = player.plus(new Vec(3, 10)); // adjust to center
-          const pos = new Vec(player.x - ((80 + size * 2) / 2),
-                              player.y -((46 + size * 2) / 2));
+          const pos = new Vec(player.x - mainScreen.center.x,
+                              player.y - mainScreen.center.y);
 
           let relCoof = {x: display.width / (80 + size * 2), y: display.height / (46 + size * 2)}
           win.webContents.send('set-enemy', relPos(pos, display.center, relCoof));
@@ -317,7 +316,7 @@ const startApp = async () => {
       } else {
         win.webContents.send('hide-enemy');
       }
-      await sleep(50);
+      await sleep(150);
     }
   }
 }
