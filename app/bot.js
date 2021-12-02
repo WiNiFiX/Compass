@@ -30,6 +30,15 @@ const findTheGame = (name) => {
     }
 };
 
+const theSamePos = (first, second) => {
+  for(let y = first.y - 4; y < first.y + 4; y++) {
+    for(let x = first.x - 4; x < first.x + 4; x++) {
+      if(second.x == x && second.y == y) {
+        return true;
+      }
+    }
+  }
+};
 
 class Vec{
   constructor(x, y) {
@@ -73,6 +82,28 @@ class Rgb {
     }
   }
 
+  findColors (color, cond) {
+    let found = [];
+
+    for(let y = 0; y < this.rgb.length; y++) {
+      for(let x = 0; x < this.rgb[0].length; x++) {
+        let pixel = this.rgb[y][x];
+        if(color(pixel)) {
+          let point = new Vec(x, y);
+          if(!cond || cond(this, point)){
+            if(!found.some(p => {
+              return theSamePos(p, point);
+            })) {
+              found.push(point)
+            }
+          }
+        }
+      }
+    }
+    return found;
+  }
+
+
   checkAround(center, color, size = 3) {
    for(let y = center.y - size; y <= center.y + size; y++) {
      for(let x = center.x - size; x <= center.x + size; x++) {
@@ -87,6 +118,7 @@ class Rgb {
    }
  };
 }
+
 
 
 
@@ -111,7 +143,7 @@ class Display {
     return new Vec(this.width / 2, this.height / 2);
   }
 
-  async getRgb() {
+  getRgb() {
     const captured = w.capture(this).data;
     let rgb = [];
     for(let v of captured.values()) rgb.push(v);
@@ -226,7 +258,7 @@ const relPos = ({x, y}, center, coof) => {
   if(y > 515) { y = 515; }
   else if(y < -515) {  y = -515;}
   */
-  // console.log(x, y);
+
   return center.plus(new Vec(x, y));
 }
 
@@ -293,30 +325,40 @@ const startApp = async () => {
     }, 1000);
   } else {
     for(;;) {
-      const mapRgb = await map.getRgb();
-      const viewScreen = mapRgb.findColor(isWhite, isViewScreen); // viewScreen BUG
-      if(!viewScreen) {continue}
-      let mainScreen = createMainScreen(viewScreen, map, size)
-      .enlarge(size);
+      const mapRgb = map.getRgb();
+      const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
 
-      const visibleScreen = {x: size + 20, y: size + 20, width: 40, height: 36};
-      const mainScreenRgb = await mainScreen.getRgb();
-      let player = mainScreenRgb.findColor(isRed, isEnemy)
-      player = player && player.plus(new Vec(3, 10)); // adjust to center
-
-      if(player && !alreadyVisible(player, visibleScreen)) {
-          const pos = new Vec(player.x - mainScreen.center.x,
-                              player.y - mainScreen.center.y);
-
-          let relCoof = {x: display.width / (80 + size * 2), y: display.height / (46 + size * 2)}
-          win.webContents.send('set-enemy', relPos(pos, display.center, relCoof));
-
-          //let {x, y} = new Vec(mainScreen.x + player.x, mainScreen.y + player.y);
-          //m.moveTo(x, y);
-      } else {
-        win.webContents.send('hide-enemy');
+      if(!viewScreen) {
+        continue
       }
-      await sleep(150);
+
+      const mainScreen = createMainScreen(viewScreen, map, size).enlarge(size);
+      const mainScreenRgb = mainScreen.getRgb();
+
+      const players = mainScreenRgb.findColors(isRed, isEnemy);
+      const visibleScreen = Display.create({x: mainScreen.center.x,
+                                            y: mainScreen.center.y,
+                                            width: 1,
+                                            height: 1}).enlarge(20);
+
+      const relCoof = {x: display.width / mainScreen.width,
+                      y: display.height / mainScreen.height};
+
+      const playersRel = players.map(player => {
+        if(!alreadyVisible(player, visibleScreen)) {
+            const pos = new Vec(player.x - mainScreen.center.x,
+                                player.y - mainScreen.center.y);
+
+            return relPos(pos, display.center, relCoof);
+
+            //let {x, y} = new Vec(mainScreen.x + player.x, mainScreen.y + player.y);
+            //m.moveTo(x, y);
+        }
+      })
+      console.log(playersRel);
+      win.webContents.send('set-enemies', playersRel);
+
+      await sleep(50);
     }
   }
 }
