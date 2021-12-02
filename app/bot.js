@@ -31,8 +31,8 @@ const findTheGame = (name) => {
 };
 
 const theSamePos = (first, second) => {
-  for(let y = first.y - 4; y < first.y + 4; y++) {
-    for(let x = first.x - 4; x < first.x + 4; x++) {
+  for(let y = first.y - 10; y < first.y + 10; y++) {
+    for(let x = first.x - 10; x < first.x + 10; x++) {
       if(second.x == x && second.y == y) {
         return true;
       }
@@ -248,27 +248,41 @@ const isViewScreen = (rgb, start) => {
 };
 
 
-const relPos = ({x, y}, center, coof) => {
-  x *= coof.x;
-  y *= coof.y;
-  /*
-  if(x > 965) { x = 965; }
-  else if(x < -965) { x = -965;}
+const relPos = (player, display, mainScreen) => {
+  player = player.plus(new Vec(3, 10));
 
-  if(y > 515) { y = 515; }
-  else if(y < -515) {  y = -515;}
-  */
+  const coof = {x: display.width / mainScreen.width,
+                y: display.height / mainScreen.height};
 
-  return center.plus(new Vec(x, y));
+  let {x, y} = new Vec((player.x - mainScreen.center.x) * coof.x,
+                       (player.y - mainScreen.center.y) * coof.y);
+
+
+  let limit = new Vec((30 / mainScreen.width) * display.width,
+                      (13 / mainScreen.height) * display.height);
+
+  if(x > limit.x) { x = limit.x; }
+  else if(x < -limit.x) { x = -limit.x;}
+
+  if(y > limit.y) { y = limit.y; }
+  else if(y < -limit.y) {  y = -limit.y;}
+
+  if(isVisible({x, y}, limit)) {
+    return false;
+  }
+
+  return display.center.plus(new Vec(x, y));
 }
 
-const alreadyVisible = (player, visible) => {
-  if(player.x > visible.x &&
-     player.x < visible.x + visible.width &&
-     player.y > visible.y &&
-     player.y < visible.y + visible.height) {
+
+
+const isVisible = (player, visible) => {
+  if(player.x < visible.x &&
+     player.x > -visible.x &&
+     player.y < visible.y &&
+     player.y > -visible.y) {
        return true;
-     }
+    }
 };
 
 const checkLimit = (inner, outer) => {
@@ -328,37 +342,15 @@ const startApp = async () => {
       const mapRgb = map.getRgb();
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
 
-      if(!viewScreen) {
-        continue
-      }
-
       const mainScreen = createMainScreen(viewScreen, map, size).enlarge(size);
       const mainScreenRgb = mainScreen.getRgb();
 
       const players = mainScreenRgb.findColors(isRed, isEnemy);
-      const visibleScreen = Display.create({x: mainScreen.center.x,
-                                            y: mainScreen.center.y,
-                                            width: 1,
-                                            height: 1}).enlarge(20);
-
-      const relCoof = {x: display.width / mainScreen.width,
-                      y: display.height / mainScreen.height};
-
-      const playersRel = players.map(player => {
-        if(!alreadyVisible(player, visibleScreen)) {
-            const pos = new Vec(player.x - mainScreen.center.x,
-                                player.y - mainScreen.center.y);
-
-            return relPos(pos, display.center, relCoof);
-
-            //let {x, y} = new Vec(mainScreen.x + player.x, mainScreen.y + player.y);
-            //m.moveTo(x, y);
-        }
-      })
-      console.log(playersRel);
+      const playersRel = players.map(player => relPos(player, display, mainScreen))
+      .filter(p => p);
       win.webContents.send('set-enemies', playersRel);
 
-      await sleep(50);
+      await sleep(1);
     }
   }
 }
