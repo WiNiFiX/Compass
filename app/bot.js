@@ -179,8 +179,7 @@ class Display {
 
 
 const isEnemy = (rgb, {x, y}) => {
-  let center = new Vec(x, y)
-  .plus(new Vec(3, 10));
+  let center = new Vec(x, y).plus(new Vec(-12.5, 0)); // 3, 10
 
   for(let angle = 0, step = 0.1; angle < Math.PI * 2; angle += step) {
     let x = Math.floor(center.x + (Math.cos(angle) * 12.5));
@@ -216,7 +215,7 @@ const findSide = (area, {x, y}) => {
 const isViewScreen = (rgb, start) => {
 
   if(!isViewScreen.side) {
-    for(let x = start.x; x < start.x + 10; x++) {
+    for(let x = start.x; x < start.x + 45; x++) {
       let point = new Vec(x, start.y);
       if(!rgb.checkAround(point, isWhite, 1)) {
         return false;
@@ -249,29 +248,22 @@ const isViewScreen = (rgb, start) => {
 
 
 const relPos = (player, display, mainScreen) => {
-  player = player.plus(new Vec(3, 10));
+  player = player.plus(new Vec(-12.5, 0));
 
-  const coof = {x: display.width / mainScreen.width,
-                y: display.height / mainScreen.height};
+  let {x, y} = new Vec(player.x - mainScreen.center.x,
+                       player.y - mainScreen.center.y);
 
-  let {x, y} = new Vec((player.x - mainScreen.center.x) * coof.x,
-                       (player.y - mainScreen.center.y) * coof.y);
-
-
-  let limit = new Vec((30 / mainScreen.width) * display.width,
-                      (13 / mainScreen.height) * display.height);
-
-  if(x > limit.x) { x = limit.x; }
-  else if(x < -limit.x) { x = -limit.x;}
-
-  if(y > limit.y) { y = limit.y; }
-  else if(y < -limit.y) {  y = -limit.y;}
+  let limit = new Vec(35, 17);
 
   if(isVisible({x, y}, limit)) {
     return false;
   }
 
-  return display.center.plus(new Vec(x, y));
+  let angle = Math.atan2(y, x);
+  if(angle < 0) {angle = Math.PI + (Math.PI + angle)}
+  let angle360 = angle * (360 / (Math.PI * 2));
+
+  return {angle360, angle};
 }
 
 
@@ -341,16 +333,18 @@ const startApp = async () => {
     for(;;) {
       const mapRgb = map.getRgb();
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
-
+      if(!viewScreen) {continue};
       const mainScreen = createMainScreen(viewScreen, map, size).enlarge(size);
       const mainScreenRgb = mainScreen.getRgb();
-
+      console.log(mainScreen);
       const players = mainScreenRgb.findColors(isRed, isEnemy);
+
       const playersRel = players.map(player => relPos(player, display, mainScreen))
       .filter(p => p);
+
       win.webContents.send('set-enemies', playersRel);
 
-      await sleep(1);
+      await sleep(10);
     }
   }
 }
