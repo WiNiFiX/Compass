@@ -1,4 +1,4 @@
-const {Virtual, Hardware, getAllWindows} = require('keysender');
+const {Virtual, Hardware, getAllWindows, sleep} = require('keysender');
 const pixels = require('image-pixels');
 
 // GLOBALS //
@@ -6,15 +6,17 @@ const pixels = require('image-pixels');
 let w, m, k, win;
 const delay = 75;
 let test = false;
-
+let testMap;
+let testMainScreen;
 
 // END OF GLOBALS //
 
-const sleep = (time) => {
+const asleep = (time = 0) => {
   return new Promise((resolve, reject) => {
     setTimeout(resolve, time);
   });
 }
+
 
 const findTheGame = (name) => {
   try {
@@ -50,6 +52,10 @@ class Vec{
     return new Vec(this.x + vec.x, this.y + vec.y);
   }
 
+  minus(vec) {
+    return new Vec(this.x - vec.x, this.y - vec.y);
+  }
+
   get dist() {
     return Math.sqrt(Math.pow(Math.abs(this.x), 2) + Math.pow(Math.abs(this.y), 2));
   }
@@ -65,7 +71,7 @@ class Rgb {
 
   colorAt({x, y}) {
     if(x < 0 || y < 0 || x > this.width - 1 || y > this.height - 1) { return false};
-    return this.rgb[y][x];
+    return this.rgb[Math.floor(y)][Math.floor(x)];
   }
 
   findColor (color, cond) {
@@ -90,34 +96,76 @@ class Rgb {
         let pixel = this.rgb[y][x];
         if(color(pixel)) {
           let point = new Vec(x, y);
-          if(!cond || cond(this, point)){
-            if(!found.some(p => {
-              return theSamePos(p, point);
-            })) {
+          if(!cond || !found.some(p => theSamePos(p, point)) && cond(this, point)){
               found.push(point)
-            }
           }
         }
       }
     }
     return found;
   }
-
-
-  checkAround(center, color, size = 3) {
+  testCheckAround(center, color, size = 1) {
+   let points = [];
    for(let y = center.y - size; y <= center.y + size; y++) {
      for(let x = center.x - size; x <= center.x + size; x++) {
        if(y < 0 || x < 0 || x > this.width || y > this.height) { continue }
          let point = new Vec(x, y);
-         if(point.x != center.x &&
-            point.y != center.y &&
-            color(this.colorAt(point))) {
+         if(color(this.colorAt(point))) {
+           points.push(point);
+         }
+     }
+   }
+
+   return points.length ? points : false;
+ }
+
+  checkAround(center, color, size = 1) {
+   for(let y = center.y - size; y <= center.y + size; y++) {
+     for(let x = center.x - size; x <= center.x + size; x++) {
+       if(y < 0 || x < 0 || x > this.width || y > this.height) { continue }
+         let point = new Vec(x, y);
+         if(color(this.colorAt(point))) {
            return point;
          }
      }
    }
- };
+ }
 }
+
+
+const isEnemy = (rgb, found) => {
+  let center = found.plus(new Vec(-11, -1)); // 3, 10
+
+
+//  let points = [];
+  for(let angle = 0, step = 0.1; angle < Math.PI; angle += step) {
+    let x = Math.floor(center.x + (Math.cos(angle) * 12));
+    let y = Math.floor(center.y + (Math.sin(angle) * 12));
+
+    let point = new Vec(x, y);
+    let redPos = rgb.checkAround(point, isRedandWhite, 2)
+    if(!redPos) {
+      return false;
+     }
+    //points.push(redPos);
+  }
+
+  /*
+    console.log(testMainScreen);
+    m.moveTo(testMainScreen.x + center.x, testMainScreen.y + center.y);
+   console.log(`found`, center);
+   console.log(points.reduce((a, b) => a.concat(b)).length);
+
+  let finishPoints = [];
+  for(let p of points) {
+    finishPoints.push(p.minus(center));
+  };
+  */
+
+  return true;
+
+
+};
 
 
 
@@ -178,21 +226,11 @@ class Display {
 
 
 
-const isEnemy = (rgb, {x, y}) => {
-  let center = new Vec(x, y).plus(new Vec(-12.5, 0)); // 3, 10
 
-  for(let angle = 0, step = 0.1; angle < Math.PI * 2; angle += step) {
-    let x = Math.floor(center.x + (Math.cos(angle) * 12.5));
-    let y = Math.floor(center.y + (Math.sin(angle) * 12.5));
 
-    let point = new Vec(x, y);
-    if(!rgb.checkAround(point, isRedandWhite)) {
-      return false;
-     }
-  }
 
-  return true;
-};
+
+
 
 const findSide = (area, {x, y}) => {
   let side = new Vec(0, 0);
@@ -215,7 +253,7 @@ const findSide = (area, {x, y}) => {
 const isViewScreen = (rgb, start) => {
 
   if(!isViewScreen.side) {
-    for(let x = start.x; x < start.x + 45; x++) {
+    for(let x = start.x; x < start.x + 30; x++) {
       let point = new Vec(x, start.y);
       if(!rgb.checkAround(point, isWhite, 1)) {
         return false;
@@ -253,7 +291,7 @@ const relPos = (player, display, mainScreen) => {
   let {x, y} = new Vec(player.x - mainScreen.center.x,
                        player.y - mainScreen.center.y);
 
-  let limit = new Vec(35, 17);
+  let limit = new Vec(20, 10);
 
   if(isVisible({x, y}, limit)) {
     return false;
@@ -319,8 +357,9 @@ const startApp = async () => {
 
   const display = Display.create(w.getView());
   const map = Display.create({x: 1606, y: 766, width: 314, height: 314});
+  testMap = map;
   // const map = display.rel(.82, .72, .148, .264);
-  const size = 40;
+  const size = 60;
   if(test) {
     setInterval(() => {
       let {x, y} = m.getPos();
@@ -335,38 +374,37 @@ const startApp = async () => {
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
       if(!viewScreen) {continue};
       const mainScreen = createMainScreen(viewScreen, map, size).enlarge(size);
+      testMainScreen = mainScreen;
       const mainScreenRgb = mainScreen.getRgb();
-      console.log(mainScreen);
-      const players = mainScreenRgb.findColors(isRed, isEnemy);
+
+      const players = mainScreenRgb.findColors(isRedandWhite, isEnemy); // TEST FIND COLORS
 
       const playersRel = players.map(player => relPos(player, display, mainScreen))
       .filter(p => p);
 
       win.webContents.send('set-enemies', playersRel);
-
-      await sleep(10);
+      await asleep();
     }
   }
 }
 
 
+
 const isRed = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return (r - g > 100 && r - b > 100);
+  return r - g > 150 && r - b > 150;
 };
 
 const isRedandWhite = (color) => {
-  if(!color) return;
-  let [r, g, b] = color;
-  return (r - g > 100 && r - b > 100) || isWhite(color);
+  return isRed(color) || isWhite(color);
 };
 
 
 const isWhite = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r > 225 && g > 225 && b > 225;
+  return r > 254 && g > 254 && b > 254;
 }
 
 const runApp = exports.runApp = (mainWindow) => {
