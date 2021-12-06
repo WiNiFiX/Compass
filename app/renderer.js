@@ -6,7 +6,7 @@ const renderEnemy = ({angle, angle360}) => {
   enemy.style.left = `${960 + Math.cos(angle) * 150}px`;
   enemy.style.top = `${540 + Math.sin(angle) * 150}px`;
 
-  enemy.style.transform = `rotate(${angle360}deg)`;
+  enemy.style.transform = `rotate(${angle / (Math.PI * 2)}turn)`;
   return enemy;
 };
 
