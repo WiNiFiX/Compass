@@ -71,7 +71,7 @@ class Rgb {
 
   colorAt({x, y}) {
     if(x < 0 || y < 0 || x > this.width - 1 || y > this.height - 1) { return false};
-    return this.rgb[Math.floor(y)][Math.floor(x)];
+    return this.rgb[y][x];
   }
 
   findColor (color, cond) {
@@ -96,8 +96,9 @@ class Rgb {
         let pixel = this.rgb[y][x];
         if(color(pixel)) {
           let point = new Vec(x, y);
-          if(!cond || !found.some(p => theSamePos(p, point)) && cond(this, point)){
-              found.push(point)
+          let pointCenter = cond && cond(this, point);
+          if(pointCenter && !found.some(p => theSamePos(p, pointCenter))){
+              found.push(pointCenter)
           }
         }
       }
@@ -124,7 +125,7 @@ class Rgb {
      for(let x = center.x - size; x <= center.x + size; x++) {
        if(y < 0 || x < 0 || x > this.width || y > this.height) { continue }
          let point = new Vec(x, y);
-         if(color(this.colorAt(point))) {
+         if(color(this.colorAt(point), point)) {
            return point;
          }
      }
@@ -134,37 +135,20 @@ class Rgb {
 
 
 const isEnemy = (rgb, found) => {
-  let center = found.plus(new Vec(-11, -1)); // 3, 10
+  let center = found.plus(new Vec(-12, 0)); // 3, 10
 
-
-//  let points = [];
-  for(let angle = 0, step = 0.1; angle < Math.PI; angle += step) {
-    let x = Math.floor(center.x + (Math.cos(angle) * 12));
-    let y = Math.floor(center.y + (Math.sin(angle) * 12));
+  for(let angle = 0, step = 0.1; angle < Math.PI * 2; angle += step) {
+    let x = Math.floor(center.x + (Math.cos(angle) * 12.5));
+    let y = Math.floor(center.y + (Math.sin(angle) * 12.5));
 
     let point = new Vec(x, y);
-    let redPos = rgb.checkAround(point, isRedandWhite, 2)
+    let redPos = rgb.checkAround(point, isRedandWhite, 3)
     if(!redPos) {
       return false;
      }
-    //points.push(redPos);
   }
 
-  /*
-    console.log(testMainScreen);
-    m.moveTo(testMainScreen.x + center.x, testMainScreen.y + center.y);
-   console.log(`found`, center);
-   console.log(points.reduce((a, b) => a.concat(b)).length);
-
-  let finishPoints = [];
-  for(let p of points) {
-    finishPoints.push(p.minus(center));
-  };
-  */
-
-  return true;
-
-
+  return center;
 };
 
 
@@ -223,12 +207,6 @@ class Display {
     return new Display(scr);
   }
 }
-
-
-
-
-
-
 
 
 
@@ -291,7 +269,7 @@ const relPos = (player, display, mainScreen) => {
   let {x, y} = new Vec(player.x - mainScreen.center.x,
                        player.y - mainScreen.center.y);
 
-  let limit = new Vec(20, 10);
+  let limit = new Vec(30, 20);
 
   if(isVisible({x, y}, limit)) {
     return false;
@@ -345,6 +323,7 @@ const createMainScreen = (viewScreen, map) => {
 };
 
 
+
 const startApp = async () => {
   const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
   w = workwindow;
@@ -360,35 +339,76 @@ const startApp = async () => {
   testMap = map;
   // const map = display.rel(.82, .72, .148, .264);
   const size = 60;
-  if(test) {
-    setInterval(() => {
-      let {x, y} = m.getPos();
-      if(x < 0 || y < 0 || x > x + display.width || y > y + display.height) { return };
-      let color = w.colorAt(x, y, 'array');
-      console.log(x, y, color);
 
-    }, 1000);
-  } else {
+
     for(;;) {
       const mapRgb = map.getRgb();
       const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
-      if(!viewScreen) {continue};
+      if(!viewScreen) {continue}
       const mainScreen = createMainScreen(viewScreen, map, size).enlarge(size);
+
       testMainScreen = mainScreen;
-      const mainScreenRgb = mainScreen.getRgb();
 
-      const players = mainScreenRgb.findColors(isRedandWhite, isEnemy); // TEST FIND COLORS
+      //const mainScreenRgb = mainScreen.getRgb();
 
+      const players = mapRgb.findColors(isRedandWhite, isEnemy).filter(isSticked);
+      stickEnemies(players, mapRgb);
+      sticked = checkSticked(mapRgb);
+      console.log(sticked);
+      /*
       const playersRel = players.map(player => relPos(player, display, mainScreen))
       .filter(p => p);
 
       win.webContents.send('set-enemies', playersRel);
+      */
       await asleep();
+
     }
-  }
+
 }
 
+let sticked = [];
 
+const stickEnemies = (enemies, rgb) => {
+  if(!enemies.length) return;
+
+  for(let enemy of enemies) {
+    let color = rgb.colorAt(enemy);
+    let x = enemy.x;
+    let y = enemy.y;
+    sticked.push({x, y, color});
+  }
+};
+
+const checkSticked = (rgb) => {
+  let newSticked = [];
+    for(let stk of sticked) {
+      let color = stk.color;
+      console.log(color);
+      const isColor = ([r, g, b], pos) => {
+        console.log(`colors around`, pos, r, g, b);
+        return r == color[0] &&
+               g == color[1] &&
+               b == color[2];
+      };
+
+      let pos = rgb.checkAround(stk, isColor, 2);
+      let {x, y} = pos;
+      newSticked.push({x, y, color});
+
+      if(pos) {
+
+      }
+
+    }
+  return newSticked;
+};
+
+
+
+const isSticked = (enemy) => {
+ return !sticked.some(stk => theSamePos(stk, enemy));
+};
 
 const isRed = (color) => {
   if(!color) return;
