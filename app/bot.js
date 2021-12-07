@@ -313,7 +313,6 @@ const startApp = async () => {
       const mapRgb = map.getRgb();
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
       if(!viewPort) {continue}
-
       const mainScreen = createMainScreen(viewPort, map, viewPortSize)
       .enlarge(size);
 
@@ -353,7 +352,7 @@ const getAngle = ({x, y}) => {
 const isRed = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r - g > 100 && r - b > 100;
+  return r - g > 75 && r - b > 75;
 };
 
 const isRedandWhite = (color) => {
@@ -363,7 +362,7 @@ const isRedandWhite = (color) => {
 const isWhite = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r > 230 && g > 230 && b > 230;
+  return r > 254 && g > 254 && b > 254;
 };
 
 const runApp = exports.runApp = (mainWindow) => {
