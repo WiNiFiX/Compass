@@ -17,7 +17,7 @@ const append = (node) => {
 let count = 0;
 ipcRenderer.on('set-enemies', (event, enemies) => {
 
-  if(count == 20) {
+  if(count == 10) {
     document.body.innerHTML = ``;
     count = 0;
   };
