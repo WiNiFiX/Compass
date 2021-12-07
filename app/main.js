@@ -31,8 +31,8 @@ const createWindow = exports.createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow();
-  // win.webContents.openDevTools();
   runApp(win);
+  // win.webContents.openDevTools();
 })
 
 

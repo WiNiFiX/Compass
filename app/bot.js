@@ -5,18 +5,17 @@ const pixels = require('image-pixels');
 
 let w, m, k, win;
 const delay = 75;
-let test = false;
-let testMap;
-let testMainScreen;
+let state = true;
 
+let test = false;
+let mapTest;
 // END OF GLOBALS //
 
 const asleep = (time = 0) => {
   return new Promise((resolve, reject) => {
     setTimeout(resolve, time);
   });
-}
-
+};
 
 const findTheGame = (name) => {
   try {
@@ -32,7 +31,7 @@ const findTheGame = (name) => {
     }
 };
 
-const theSamePos = (first, second, size = 10) => {
+const theSamePos = (first, second, size = 12) => {
   for(let y = first.y - size; y < first.y + size; y++) {
     for(let x = first.x - size; x < first.x + size; x++) {
       if(second.x == x && second.y == y) {
@@ -102,6 +101,7 @@ class Rgb {
         }
       }
     }
+
     return found;
   }
 
@@ -110,32 +110,54 @@ class Rgb {
      for(let x = center.x - size; x <= center.x + size; x++) {
        if(y < 0 || x < 0 || x > this.width || y > this.height) { continue }
          let point = new Vec(x, y);
-         if(color(this.colorAt(point), point)) {
+         if(color(this.colorAt(point))) {
            return point;
          }
      }
    }
  }
+
+ testCheckAround(center, color, size = 1) {
+  let points = [];
+  for(let y = center.y - size; y <= center.y + size; y++) {
+    for(let x = center.x - size; x <= center.x + size; x++) {
+      if(y < 0 || x < 0 || x > this.width || y > this.height) { continue }
+        let point = new Vec(x, y);
+        if(color(this.colorAt(point))) {
+          points.push(point);
+        }
+    }
+  }
+
+  return points.length && points;
 }
 
-const isEnemy = (rgb, found) => {
-  let center = found.plus(new Vec(-11, 0)); // 3, 10
+}
+const smallestDistance = (a, b) => {
+  if(a.dist < b.dist) {
+    return a;
+  } else {
+    return b;
+  }
+};
 
-  for(let angle = 0, step = 0.1; angle < Math.PI * 2; angle += step) {
-    let x = Math.floor(center.x + (Math.cos(angle) * 12.5));
-    let y = Math.floor(center.y + (Math.sin(angle) * 12.5));
+
+
+const isEnemy = (rgb, found) => {
+  let center = found.plus(new Vec(-12, 0));
+
+  for(let angle = 0, step = Math.PI * 2 / 8; angle < Math.PI * 2; angle += step) {
+    let x = Math.round(center.x + (Math.cos(angle) * 12));
+    let y = Math.round(center.y + (Math.sin(angle) * 12));
 
     let point = new Vec(x, y);
-    let redPos = rgb.checkAround(point, isRedandWhite, 3)
-    if(!redPos) {
+    if(!rgb.testCheckAround(point, isRedandWhite, 1)) {
       return false;
      }
   }
 
   return center;
 };
-
-
 
 
 class Display {
@@ -192,8 +214,6 @@ class Display {
   }
 }
 
-
-
 const findSide = (area, {x, y}) => {
   let side = new Vec(0, 0);
 
@@ -212,19 +232,19 @@ const findSide = (area, {x, y}) => {
   return side;
 };
 
-const isViewScreen = (rgb, start) => {
+const isViewPort = (rgb, start) => {
 
-  if(!isViewScreen.side) {
+  if(!isViewPort.side) {
     for(let x = start.x; x < start.x + 30; x++) {
       let point = new Vec(x, start.y);
       if(!rgb.checkAround(point, isWhite, 1)) {
         return false;
       }
     }
-    isViewScreen.side = findSide(rgb, start);
+    isViewPort.side = findSide(rgb, start);
   }
 
-  let side = isViewScreen.side
+  let side = isViewPort.side
 
   for(let x = start.x; x != start.x + (side.x * 10); x += side.x) {
     let point = new Vec(x, start.y);
@@ -253,25 +273,26 @@ const checkLimit = (inner, outer) => {
   return Display.create({x, y, width, height});
 };
 
-const createMainScreen = (viewScreen, map) => {
-  const side = isViewScreen.side;
+const createMainScreen = (viewPort, map, size) => {
+  const side = isViewPort.side;
 
-  const width = 80;
-  const height = 46;
+  const width = size.width;
+  const height = size.height;
 
   const widthRel = side.x < 0 ? -width : 0;
   const heightRel = side.y < 0 ? -height: 0;
 
-  let x = viewScreen.x + widthRel;
-  let y = viewScreen.y + heightRel;
+  let x = viewPort.x + widthRel;
+  let y = viewPort.y + heightRel;
 
-  isViewScreen.side = null;
+  isViewPort.side = null;
   return checkLimit({x, y, width, height}, map);
 };
 
 
 
 const startApp = async () => {
+
   const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
   w = workwindow;
   m = mouse;
@@ -283,41 +304,42 @@ const startApp = async () => {
 
   const display = Display.create(w.getView());
   const map = Display.create({x: 1606, y: 766, width: 314, height: 314});
+  const viewPortSize = {width: 80, height: 46};
   const size = 50;
 
-    for(;;) {
-      const mapRgb = map.getRgb();
-      const viewScreen = mapRgb.findColor(isWhite, isViewScreen);
-      if(!viewScreen) {continue}
+  mapTest = map;
 
-      const mainScreen = createMainScreen(viewScreen, map, size)
+    for(;state;) {
+      const mapRgb = map.getRgb();
+      const viewPort = mapRgb.findColor(isWhite, isViewPort);
+      if(!viewPort) {continue}
+
+      const mainScreen = createMainScreen(viewPort, map, viewPortSize)
       .enlarge(size);
 
-      let players = mapRgb.findColors(isRedandWhite, isEnemy)
-      .filter(player => inRangeOf(player, mainScreen) &&
-                       !inRangeOf(player, mainScreen.enlarge(-60)))
-      .map(player => getRel(player, mainScreen.center))
+      const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
+      .filter(enemy => // inRangeOf(enemy, mainScreen) &&
+                       !inRangeOf(enemy, mainScreen.enlarge(-55)))
+      .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
-      win.webContents.send('set-enemies', players);
+      win.webContents.send('set-enemies', enemies);
       await asleep();
 
     }
-}
-
-const inRangeOf = (player, zone) => {
-  if(player.x > zone.x &&
-     player.x < zone.x + zone.width &&
-     player.y > zone.y &&
-     player.x < zone.y + zone.height) {
-       return true
-     }
 };
 
-const getRel = (player, center) => {
-  return new Vec(player.x - center.x,
-                 player.y - center.y);
-}
+const inRangeOf = (enemy, zone) => {
+ return enemy.x > zone.x &&
+        enemy.x < zone.x + zone.width &&
+        enemy.y > zone.y &&
+        enemy.y < zone.y + zone.height;
+};
+
+const getRel = (enemy, center) => {
+  return new Vec(enemy.x - center.x,
+                 enemy.y - center.y);
+};
 
 const getAngle = ({x, y}) => {
   let angle = Math.atan2(y, x);
@@ -331,27 +353,28 @@ const getAngle = ({x, y}) => {
 const isRed = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r - g > 150 && r - b > 150;
+  return r - g > 100 && r - b > 100;
 };
 
 const isRedandWhite = (color) => {
   return isRed(color) || isWhite(color);
 };
 
-
 const isWhite = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r > 250 && g > 250 && b > 250;
-}
+  return r > 230 && g > 230 && b > 230;
+};
 
 const runApp = exports.runApp = (mainWindow) => {
   win = mainWindow;
-  win.show();
-  try {
-    console.log(`here`);
-    startApp();
-  } catch(e) {
+  // win.show();
+  console.log(`Starting app...`);
+
+  startApp()
+  .then(e => {console.log('Stopped the bot...')})
+  .catch(e => {
     console.log(e);
-  }
+  });
+
 };

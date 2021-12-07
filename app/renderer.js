@@ -1,6 +1,6 @@
 const { ipcRenderer } = require('electron');
 
-const renderEnemy = ({angle, angle360}) => {
+const renderEnemy = ({angle}) => {
   let enemy = document.createElement('div');
   enemy.classList.add('enemy');
   enemy.style.left = `${960 + Math.cos(angle) * 150}px`;
@@ -17,7 +17,7 @@ const append = (node) => {
 let count = 0;
 ipcRenderer.on('set-enemies', (event, enemies) => {
 
-  if(count == 10) {
+  if(count == 20) {
     document.body.innerHTML = ``;
     count = 0;
   };
@@ -26,7 +26,7 @@ ipcRenderer.on('set-enemies', (event, enemies) => {
     document.body.innerHTML = ``;
     enemies.map(renderEnemy).forEach(append);
   } else {
-    count++;
+    count += 1;
   }
 
 });
