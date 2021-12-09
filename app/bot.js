@@ -237,7 +237,7 @@ const isViewPort = (rgb, start) => {
   if(!isViewPort.side) {
     for(let x = start.x; x < start.x + 30; x++) {
       let point = new Vec(x, start.y);
-      if(!rgb.checkAround(point, isWhite, 1)) {
+      if(!isWhite(rgb.colorAt(point))) {
         return false;
       }
     }
@@ -248,14 +248,14 @@ const isViewPort = (rgb, start) => {
 
   for(let x = start.x; x != start.x + (side.x * 10); x += side.x) {
     let point = new Vec(x, start.y);
-    if(!rgb.checkAround(point, isWhite, 1)) {
+    if(!isWhite(rgb.colorAt(point))) {
       return false;
     }
   }
 
   for(let y = start.y; y != start.y + (side.y * 10); y += side.y) {
     let point = new Vec(start.x, y);
-    if(!rgb.checkAround(point, isWhite, 1)) {
+    if(!isWhite(rgb.colorAt(point))) {
       return false;
     }
   }
@@ -290,8 +290,11 @@ const createMainScreen = (viewPort, map, size) => {
 };
 
 
+const stopApp = exports.stopApp = () => {
+  state = false;
+};
 
-const startApp = async () => {
+const startApp = exports.startApp = async (win) => {
 
   const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
   w = workwindow;
@@ -312,6 +315,7 @@ const startApp = async () => {
     for(;state;) {
       const mapRgb = map.getRgb();
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
+
       if(!viewPort) {continue}
       const mainScreen = createMainScreen(viewPort, map, viewPortSize)
       .enlarge(size);
@@ -324,7 +328,6 @@ const startApp = async () => {
 
       win.webContents.send('set-enemies', enemies);
       await asleep();
-
     }
 };
 
@@ -363,17 +366,4 @@ const isWhite = (color) => {
   if(!color) return;
   let [r, g, b] = color;
   return r > 254 && g > 254 && b > 254;
-};
-
-const runApp = exports.runApp = (mainWindow) => {
-  win = mainWindow;
-  // win.show();
-  console.log(`Starting app...`);
-
-  startApp()
-  .then(e => {console.log('Stopped the bot...')})
-  .catch(e => {
-    console.log(e);
-  });
-
 };
