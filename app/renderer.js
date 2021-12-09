@@ -30,3 +30,7 @@ ipcRenderer.on('set-enemies', (event, enemies) => {
   }
 
 });
+
+ipcRenderer.on('clear-arrow', () => {
+  document.body.innerHTML = ``; 
+});
