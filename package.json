@@ -10,7 +10,7 @@
   "author": "olesgeras",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^16.0.2"
+    "electron": "^16.0.4"
   },
   "dependencies": {
     "keysender": "^1.6.5"
