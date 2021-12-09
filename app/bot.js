@@ -41,6 +41,7 @@ const theSamePos = (first, second, size = 12) => {
   }
 };
 
+
 class Vec{
   constructor(x, y) {
     this.x = x;
@@ -311,8 +312,10 @@ const startApp = exports.startApp = async (win) => {
   const size = 50;
 
   mapTest = map;
+  w.setForeground();
 
     for(;state;) {
+      if(!w.isOpen()) { throw new Error(`Can't find the window of the game.`) };
       const mapRgb = map.getRgb();
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
 
@@ -327,6 +330,7 @@ const startApp = exports.startApp = async (win) => {
       .map(getAngle)
 
       win.webContents.send('set-enemies', enemies);
+
       await asleep();
     }
 };
