@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell, Notification } = require('electron');
 const path = require('path');
 const { startApp, stopApp } = require('./bot.js');
 
@@ -31,25 +31,40 @@ const createGameWindow = () => {
   });
 };
 
+const errorNote = ({message}) => {
+  new Notification({
+    title: `Error`,
+    body: message,
+    critical: 'critical'
+  }).show();
+};
 
-const createTray = () => {
-  const icon = nativeImage.createFromPath(path.join(__dirname, '/img/arr.png'));
-  tray = new Tray(icon);
+const createMenu = () => {
   const template = [
     {
       label: 'Start Compass',
       click() {
         createGameWindow()
         .then(startApp)
-        .catch(e => console.log(e));
-      }
+        .catch(e => {
+          errorNote(e);
+          win.destroy();
+          win = null;
+          tray.setContextMenu(createMenu());
+        });
+        tray.setContextMenu(createMenu());
+      },
+      enabled: !win
     },
     {
       label: 'Stop compass',
       click() {
-        stopApp();
-        win.destroy();
-      }
+          stopApp();
+          win.destroy();
+          win = null;
+          tray.setContextMenu(createMenu());
+      },
+      enabled: !!win
     },
     { type: 'separator'},
     {
@@ -64,12 +79,21 @@ const createTray = () => {
     },
     {
       label: 'Exit',
-      role: 'quit'
+      click() {
+        stopApp();
+        app.quit();
+      }
     }
   ];
 
+  return Menu.buildFromTemplate(template);
+};
+
+const createTray = () => {
+  const icon = nativeImage.createFromPath(path.join(__dirname, '/img/arr.png'));
+  tray = new Tray(icon);
   tray.setToolTip('lol');
-  tray.setContextMenu(Menu.buildFromTemplate(template));
+  tray.setContextMenu(createMenu());
 };
 
 
