@@ -309,10 +309,13 @@ const startApp = exports.startApp = async (win) => {
   const display = Display.create(w.getView());
   const map = Display.create({x: 1606, y: 766, width: 314, height: 314});
   const viewPortSize = {width: 80, height: 46};
+  const viewPortLimit = {width: 70, height: 40};
   const size = 50;
 
   mapTest = map;
   w.setForeground();
+  win.show();
+  state = true;
 
     for(;state;) {
       if(!w.isOpen()) { throw new Error(`Can't find the window of the game.`) };
@@ -324,8 +327,8 @@ const startApp = exports.startApp = async (win) => {
       .enlarge(size);
 
       const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
-      .filter(enemy => // inRangeOf(enemy, mainScreen) &&
-                       !inRangeOf(enemy, mainScreen.enlarge(-55)))
+      .filter(enemy => //inRangeOf(enemy, mainScreen) &&
+                       !inRangeOf(enemy, mainScreen.enlarge(-60)))
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
@@ -347,13 +350,15 @@ const getRel = (enemy, center) => {
                  enemy.y - center.y);
 };
 
-const getAngle = ({x, y}) => {
-  let angle = Math.atan2(y, x);
+const getAngle = (pos) => {
+  let angle = Math.atan2(pos.y, pos.x);
   if(angle < 0) {
     angle = Math.PI + (Math.PI + angle)
   }
+  let dist = pos.dist;
+  let scale = 1 - (dist / 600);
 
-  return {angle};
+  return {scale, angle};
 };
 
 const isRed = (color) => {
