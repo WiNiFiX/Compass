@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell, Notificatio
 const path = require('path');
 const { startApp, stopApp } = require('./bot.js');
 
-let win, tray;
+let win, tray, icon;
 
 const createGameWindow = () => {
   return new Promise((resolve, reject) => {
@@ -25,19 +25,33 @@ const createGameWindow = () => {
     win.removeMenu();
 
     win.once('ready-to-show', () => {
-      win.show();
       resolve(win);
     });
   });
 };
 
+const getOptions = () => {
+  // get options
+}
+
 const errorNote = ({message}) => {
   new Notification({
     title: `Error`,
     body: message,
-    critical: 'critical'
+    critical: 'critical',
+    icon
   }).show();
 };
+
+const updateMenu = () => {
+  tray.setContextMenu(createMenu());
+};
+
+const closeWin = () => {
+  win.destroy();
+  win = null;
+  updateMenu();
+}
 
 const createMenu = () => {
   const template = [
@@ -48,11 +62,9 @@ const createMenu = () => {
         .then(startApp)
         .catch(e => {
           errorNote(e);
-          win.destroy();
-          win = null;
-          tray.setContextMenu(createMenu());
+          closeWin();
         });
-        tray.setContextMenu(createMenu());
+        updateMenu();
       },
       enabled: !win
     },
@@ -60,9 +72,7 @@ const createMenu = () => {
       label: 'Stop compass',
       click() {
           stopApp();
-          win.destroy();
-          win = null;
-          tray.setContextMenu(createMenu());
+          closeWin();
       },
       enabled: !!win
     },
@@ -90,7 +100,7 @@ const createMenu = () => {
 };
 
 const createTray = () => {
-  const icon = nativeImage.createFromPath(path.join(__dirname, '/img/arr.png'));
+  icon = nativeImage.createFromPath(path.join(__dirname, '/img/arr.png'));
   tray = new Tray(icon);
   tray.setToolTip('lol');
   tray.setContextMenu(createMenu());
