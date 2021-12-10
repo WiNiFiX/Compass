@@ -1,12 +1,12 @@
 const { ipcRenderer } = require('electron');
 
-const renderEnemy = ({angle}) => {
+const renderEnemy = ({scale, angle}) => {
   let enemy = document.createElement('div');
   enemy.classList.add('enemy');
-  enemy.style.left = `${960 + Math.cos(angle) * 150}px`;
-  enemy.style.top = `${540 + Math.sin(angle) * 150}px`;
+  enemy.style.left = `${890 + Math.cos(angle) * 200}px`;
+  enemy.style.top = `${500 + Math.sin(angle) * 200}px`;
 
-  enemy.style.transform = `rotate(${angle / (Math.PI * 2)}turn)`;
+  enemy.style.transform = `scale(${scale}) rotate(${angle / (Math.PI * 2)}turn)`;
   return enemy;
 };
 
@@ -17,7 +17,7 @@ const append = (node) => {
 let count = 0;
 ipcRenderer.on('set-enemies', (event, enemies) => {
 
-  if(count == 10) {
+  if(count == 5) {
     document.body.innerHTML = ``;
     count = 0;
   };
@@ -29,8 +29,4 @@ ipcRenderer.on('set-enemies', (event, enemies) => {
     count += 1;
   }
 
-});
-
-ipcRenderer.on('clear-enemies', () => {
-  document.body.innerHTML = ``;
 });
