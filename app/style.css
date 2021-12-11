@@ -22,8 +22,8 @@ body{
 }
 
 .enemy {
+  display: block;
   position: absolute;
-  background: url('img/arr.png') no-repeat center center;
 }
 
 .options label {
