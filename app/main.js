@@ -1,8 +1,11 @@
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell, Notification } = require('electron');
 const path = require('path');
 const { startApp, stopApp } = require('./bot.js');
+const { readFileSync, writeFile } = require('fs');
 
-let win, tray, icon;
+let win, tray, icon, winOpt;
+
+let options = JSON.parse(readFileSync('./app/opt.json', 'utf8'));
 
 const createGameWindow = () => {
   return new Promise((resolve, reject) => {
@@ -30,9 +33,38 @@ const createGameWindow = () => {
   });
 };
 
-const getOptions = () => {
-  // get options
-}
+ipcMain.handle('save-options', (event, newOpts) => {
+  options = newOpts; 
+  let value = JSON.stringify(options);
+  writeFile('./app/opt.json', value, (error) => {
+    if(error) throw error;
+  });
+});
+
+ipcMain.handle('get-options', () => options);
+
+const createWinOpt = () => {
+  winOpt = new BrowserWindow({
+    show: false,
+    width: 400,
+    height: 400,
+    icon,
+    webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: true
+    }
+  });
+
+  winOpt.loadFile(path.join(__dirname, 'options.html'));
+
+  winOpt.once('ready-to-show', () => {
+    winOpt.webContents.openDevTools();
+    winOpt.show()
+  });
+
+  winOpt.removeMenu();
+};
+
 
 const errorNote = ({message}) => {
   new Notification({
@@ -56,7 +88,7 @@ const closeWin = () => {
 const createMenu = () => {
   const template = [
     {
-      label: 'Start Compass',
+      label: 'START',
       click() {
         createGameWindow()
         .then(startApp)
@@ -69,7 +101,7 @@ const createMenu = () => {
       enabled: !win
     },
     {
-      label: 'Stop compass',
+      label: 'STOP',
       click() {
           stopApp();
           closeWin();
@@ -78,7 +110,10 @@ const createMenu = () => {
     },
     { type: 'separator'},
     {
-      label: 'Options'
+      label: 'Options',
+      click() {
+        createWinOpt();
+      }
     },
     { type: 'separator'},
     {
