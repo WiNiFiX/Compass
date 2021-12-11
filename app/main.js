@@ -1,4 +1,14 @@
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell, Notification } = require('electron');
+const {
+        app,
+        BrowserWindow,
+        ipcMain,
+        Menu,
+        Tray,
+        nativeImage,
+        shell,
+        Notification,
+        desktopCapturer
+       } = require('electron');
 const path = require('path');
 const { startApp, stopApp } = require('./bot.js');
 const { readFileSync, writeFile } = require('fs');
@@ -27,14 +37,14 @@ const createGameWindow = () => {
     win.setIgnoreMouseEvents(true);
     win.removeMenu();
 
-    win.once('ready-to-show', () => {
+    win.once('ready-to-show', async () => {
       resolve(win);
     });
   });
 };
 
 ipcMain.handle('save-options', (event, newOpts) => {
-  options = newOpts; 
+  options = newOpts;
   let value = JSON.stringify(options);
   writeFile('./app/opt.json', value, (error) => {
     if(error) throw error;
@@ -89,7 +99,7 @@ const createMenu = () => {
   const template = [
     {
       label: 'START',
-      click() {
+      async click() {
         createGameWindow()
         .then(startApp)
         .catch(e => {
