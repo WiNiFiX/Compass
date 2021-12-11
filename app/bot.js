@@ -11,6 +11,8 @@ let test = false;
 let mapTest;
 // END OF GLOBALS //
 
+
+
 const asleep = (time = 0) => {
   return new Promise((resolve, reject) => {
     setTimeout(resolve, time);
@@ -313,12 +315,17 @@ const startApp = exports.startApp = async (win) => {
   const size = 50;
 
   mapTest = map;
+
   w.setForeground();
   win.show();
+
   state = true;
 
     for(;state;) {
       if(!w.isOpen()) { throw new Error(`Can't find the window of the game.`) };
+      if(!w.isForeground() && win.isVisible()) { win.hide() };
+      if(w.isForeground() && !win.isVisible()) { win.show() };
+
       const mapRgb = map.getRgb();
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
 
