@@ -1,6 +1,7 @@
 const { ipcRenderer } = require('electron');
 
-const compassArea = document.querySelector('.compass');
+const compassArea = document.querySelector('.compassArea');
+
 let options;
 
 ipcRenderer.invoke('get-options')
@@ -21,6 +22,7 @@ const renderEnemy = ({scale, angle}) => {
   enemy.style.transform = `scale(${scale}) rotate(${angle / (Math.PI * 2)}turn)`;
   return enemy;
 };
+
 
 (() => {
   let count = 0;
