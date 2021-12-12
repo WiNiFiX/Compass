@@ -325,17 +325,20 @@ const startApp = exports.startApp = async (win) => {
       if(!w.isOpen()) { throw new Error(`Can't find the window of the game.`) };
       if(!w.isForeground() && win.isVisible()) { win.hide() };
       if(w.isForeground() && !win.isVisible()) { win.show() };
+      if(!win.isVisible()) {
+        await asleep(250);
+        continue;
+      }
 
       const mapRgb = map.getRgb();
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
 
       if(!viewPort) {continue}
-      const mainScreen = createMainScreen(viewPort, map, viewPortSize)
-      .enlarge(size);
+      const mainScreen = createMainScreen(viewPort, map, viewPortSize);
 
       const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
-      .filter(enemy => //inRangeOf(enemy, mainScreen) &&
-                       !inRangeOf(enemy, mainScreen.enlarge(-60)))
+      .filter(enemy => //inRangeOf(enemy, mainScreen.enlarge(size)) &&
+                       !inRangeOf(enemy, mainScreen.enlarge(-10)))
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
