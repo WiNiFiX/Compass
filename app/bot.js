@@ -337,13 +337,12 @@ const startApp = exports.startApp = async (win) => {
       const mainScreen = createMainScreen(viewPort, map, viewPortSize);
 
       const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
-      .filter(enemy => //inRangeOf(enemy, mainScreen.enlarge(size)) &&
-                       !inRangeOf(enemy, mainScreen.enlarge(-10)))
+      .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(size)) &&
+                      !inRangeOf(enemy, mainScreen.enlarge(-10)))
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
       win.webContents.send('set-enemies', enemies);
-
       await asleep();
     }
 };
