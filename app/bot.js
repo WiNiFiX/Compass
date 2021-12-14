@@ -120,29 +120,7 @@ class Rgb {
    }
  }
 
- testCheckAround(center, color, size = 1) {
-  let points = [];
-  for(let y = center.y - size; y <= center.y + size; y++) {
-    for(let x = center.x - size; x <= center.x + size; x++) {
-      if(y < 0 || x < 0 || x > this.width || y > this.height) { continue }
-        let point = new Vec(x, y);
-        if(color(this.colorAt(point))) {
-          points.push(point);
-        }
-    }
-  }
-
-  return points.length && points;
 }
-
-}
-const smallestDistance = (a, b) => {
-  if(a.dist < b.dist) {
-    return a;
-  } else {
-    return b;
-  }
-};
 
 
 
@@ -154,11 +132,10 @@ const isEnemy = (rgb, found) => {
     let y = Math.round(center.y + (Math.sin(angle) * 12));
 
     let point = new Vec(x, y);
-    if(!rgb.testCheckAround(point, isRedandWhite, 1)) {
+    if(!rgb.checkAround(point, isRedandWhite)) {
       return false;
      }
   }
-
   return center;
 };
 
@@ -240,25 +217,24 @@ const isViewPort = (rgb, start) => {
   if(!isViewPort.side) {
     for(let x = start.x; x < start.x + 30; x++) {
       let point = new Vec(x, start.y);
-      if(!isWhite(rgb.colorAt(point))) {
+      if(!rgb.checkAround(point, isWhite)) {
         return false;
       }
     }
     isViewPort.side = findSide(rgb, start);
   }
-
   let side = isViewPort.side
 
   for(let x = start.x; x != start.x + (side.x * 10); x += side.x) {
     let point = new Vec(x, start.y);
-    if(!isWhite(rgb.colorAt(point))) {
+    if(!rgb.checkAround(point, isWhite)) {
       return false;
     }
   }
 
   for(let y = start.y; y != start.y + (side.y * 10); y += side.y) {
     let point = new Vec(start.x, y);
-    if(!isWhite(rgb.colorAt(point))) {
+    if(!rgb.checkAround(point, isWhite)) {
       return false;
     }
   }
@@ -311,7 +287,10 @@ const startApp = exports.startApp = async (win) => {
   const display = Display.create(w.getView());
   const map = Display.create({x: 1606, y: 766, width: 314, height: 314});
   const viewPortSize = {width: 80, height: 46};
-  const viewPortLimit = {width: 70, height: 40};
+  const basesLimit = [
+    {x: map.width - 70, y: map.y, height: 70, width: 70},
+    {x: map.x, y: map.height - 70, width: 70, height: 70}
+  ];
   const size = 50;
 
   mapTest = map;
@@ -333,12 +312,17 @@ const startApp = exports.startApp = async (win) => {
       const mapRgb = map.getRgb();
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
 
-      if(!viewPort) {continue}
+      if(!viewPort) {
+        continue
+      }
+
       const mainScreen = createMainScreen(viewPort, map, viewPortSize);
 
       const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
       .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(size)) &&
-                      !inRangeOf(enemy, mainScreen.enlarge(-10)))
+                      !inRangeOf(enemy, mainScreen) &&
+                      !basesLimit.some((zone) => inRangeOf(enemy, zone))
+                    )
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
@@ -364,8 +348,9 @@ const getAngle = (pos) => {
   if(angle < 0) {
     angle = Math.PI + (Math.PI + angle)
   }
+
   let dist = pos.dist;
-  let scale = 1 - (dist / 600);
+  let scale = Math.min(1 - ((dist - 50) / 100), 1);
 
   return {scale, angle};
 };
@@ -383,5 +368,5 @@ const isRedandWhite = (color) => {
 const isWhite = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r > 254 && g > 254 && b > 254;
+  return r > 250 && g > 250 && b > 250;
 };
