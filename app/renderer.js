@@ -10,7 +10,7 @@ ipcRenderer.invoke('get-options')
 
 const renderEnemy = ({scale, angle}) => {
   let enemy = document.createElement('img');
-  enemy.src = 'img/arrow_blue.png';
+  enemy.src = 'img/arrow.png';
   enemy.classList.add('enemy');
   enemy.style.left = `${885 + Math.cos(angle) * options.radius}px`;
   enemy.style.top = `${485 + Math.sin(angle) * options.radius}px`;
@@ -28,7 +28,7 @@ const renderEnemy = ({scale, angle}) => {
   let count = 0;
   ipcRenderer.on('set-enemies', (event, enemies) => {
 
-    if(count == 10) {
+    if(count == 15) {
       compassArea.innerHTML = ``;
       count = 0;
     };
