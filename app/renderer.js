@@ -4,9 +4,11 @@ const compassArea = document.querySelector('.compassArea');
 
 let options;
 
+
 ipcRenderer.invoke('get-options')
 .then(newOpts => options = newOpts);
 
+ipcRenderer.on('update-options', (event, newOpts) => options = newOpts);
 
 const renderEnemy = ({scale, angle}) => {
   let enemy = document.createElement('img');

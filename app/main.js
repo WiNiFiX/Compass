@@ -45,6 +45,7 @@ const createGameWindow = () => {
 
 ipcMain.handle('save-options', (event, newOpts) => {
   options = newOpts;
+  win.webContents.send('update-options', options);
   let value = JSON.stringify(options);
   writeFile('./app/opt.json', value, (error) => {
     if(error) throw error;
@@ -68,7 +69,6 @@ const createWinOpt = () => {
   winOpt.loadFile(path.join(__dirname, 'options.html'));
 
   winOpt.once('ready-to-show', () => {
-    winOpt.webContents.openDevTools();
     winOpt.show()
   });
 
