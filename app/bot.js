@@ -76,7 +76,7 @@ class Rgb {
     return this.rgb[y][x];
   }
 
-  findColor (color, cond) {
+  findColor(color, cond) {
     for(let y = 0; y < this.rgb.length; y++) {
       for(let x = 0; x < this.rgb[0].length; x++) {
         let pixel = this.rgb[y][x];
@@ -90,14 +90,14 @@ class Rgb {
     }
   }
 
-  findColors (color, cond) {
+  findColors(color, cond) {
     let found = [];
     for(let y = 0; y < this.rgb.length; y++) {
       for(let x = 0; x < this.rgb[0].length; x++) {
         let pixel = this.rgb[y][x];
         if(color(pixel)) {
           let point = new Vec(x, y);
-          let center = cond(this, point);
+          let center = cond && cond(this, point);
           if(center && !found.some(foundPoint => theSamePos(foundPoint, center))) {
               found.push(center);
           }
@@ -225,14 +225,14 @@ const isViewPort = (rgb, start) => {
   }
   let side = isViewPort.side
 
-  for(let x = start.x; x != start.x + (side.x * 10); x += side.x) {
+  for(let x = start.x; x != start.x + (side.x * 30); x += side.x) {
     let point = new Vec(x, start.y);
     if(!rgb.checkAround(point, isWhite)) {
       return false;
     }
   }
 
-  for(let y = start.y; y != start.y + (side.y * 10); y += side.y) {
+  for(let y = start.y; y != start.y + (side.y * 30); y += side.y) {
     let point = new Vec(start.x, y);
     if(!rgb.checkAround(point, isWhite)) {
       return false;
@@ -288,8 +288,8 @@ const startApp = exports.startApp = async (win) => {
   const map = Display.create({x: 1606, y: 766, width: 314, height: 314});
   const viewPortSize = {width: 80, height: 46};
   const basesLimit = [
-    {x: map.width - 70, y: map.y, height: 70, width: 70},
-    {x: map.x, y: map.height - 70, width: 70, height: 70}
+    {x: map.width - 70, y: 0, height: 70, width: 70},
+    {x: 0, y: map.height - 70, width: 70, height: 70}
   ];
   const size = 50;
 
@@ -301,6 +301,7 @@ const startApp = exports.startApp = async (win) => {
   state = true;
 
     for(;state;) {
+
       if(!w.isOpen()) { throw new Error(`Can't find the window of the game.`) };
       if(!w.isForeground() && win.isVisible()) { win.hide() };
       if(w.isForeground() && !win.isVisible()) { win.show() };
@@ -319,14 +320,21 @@ const startApp = exports.startApp = async (win) => {
       const mainScreen = createMainScreen(viewPort, map, viewPortSize);
 
       const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
+
       .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(size)) &&
-                      !inRangeOf(enemy, mainScreen) &&
+                      !inRangeOf(enemy, mainScreen.enlarge(-10)) &&
                       !basesLimit.some((zone) => inRangeOf(enemy, zone))
                     )
+      /*
+      let {x, y} = enemies[0];
+      m.moveTo(map.x + viewPort.x, map.y + viewPort.y);
+      */
+
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
       win.webContents.send('set-enemies', enemies);
+
       await asleep();
     }
 };
