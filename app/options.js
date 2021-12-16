@@ -1,41 +1,34 @@
 const { ipcRenderer } = require('electron');
 
+const form = document.querySelector('.options_form');
+const saveButton = document.querySelector('.save');
+const savedResult = document.querySelector('.saved_result'); 
+
 let options;
 
-const optionsNode = document.querySelector('.options');
-const saveButton = document.querySelector('.save');
-const savedResult = document.querySelector('.saved_result');
-
-const size = document.querySelector('#size');
-const opacity = document.querySelector('#opacity');
-const radius = document.querySelector('#radius');
-
-const sizeTextValue = document.querySelector('#size_value');
-const opacityTextValue = document.querySelector('#opacity_value');
-const radiusTextValue = document.querySelector('#radius_value');
-
-const updateValues = () => {
-  options.size = sizeTextValue.textContent = size.value;
-  options.opacity = opacityTextValue.textContent = opacity.value;
-  options.radius = radiusTextValue.textContent = radius.value;
-  ipcRenderer.send('set-options', options);
+const setOptions = (newOpts) => {
+  options = newOpts;
+  for(let option of Object.keys(options)) {
+    let input = form[option];
+    input.value = options[option];
+    input.previousElementSibling.textContent = options[option];
+  }
 }
 
-const setOptions = async () => {
-  options = await ipcRenderer.invoke('get-options');
-  size.value = options.size;
-  opacity.value = options.opacity;
-  radius.value = options.radius;
-  updateValues();
-};
-
-setOptions();
-
+const updateOptions = () => {
+  for(let option of Object.keys(options)) {
+    let input = form[option];
+    options[option] = input.value;
+  }
+  setOptions(options);
+  ipcRenderer.send('set-options', options);
+}
 
 const saveOptions = async () => {
   let result = await ipcRenderer.invoke('save-options', options);
   savedResult.textContent = 'Saved successfully!';
 };
 
-optionsNode.addEventListener('input', updateValues);
+form.addEventListener('input', updateOptions);
 saveButton.addEventListener('click', saveOptions);
+ipcRenderer.invoke('get-options').then(setOptions);
