@@ -1,17 +1,12 @@
 const {Virtual, Hardware, getAllWindows, sleep} = require('keysender');
-const pixels = require('image-pixels');
 
-// GLOBALS //
-
-let w, m, k, win;
+let w, m, k, win, state;
 const delay = 75;
-let state = true;
+let options;
 
-let test = false;
-let mapTest;
-// END OF GLOBALS //
-
-
+const updateOptsApp = exports.updateOptsApp = (newOpts) => {
+  options = newOpts;
+};
 
 const asleep = (time = 0) => {
   return new Promise((resolve, reject) => {
@@ -215,7 +210,7 @@ const findSide = (area, {x, y}) => {
 const isViewPort = (rgb, start) => {
 
   if(!isViewPort.side) {
-    for(let x = start.x; x < start.x + 30; x++) {
+    for(let x = start.x; x < start.x + 20; x++) {
       let point = new Vec(x, start.y);
       if(!rgb.checkAround(point, isWhite)) {
         return false;
@@ -225,14 +220,14 @@ const isViewPort = (rgb, start) => {
   }
   let side = isViewPort.side
 
-  for(let x = start.x; x != start.x + (side.x * 30); x += side.x) {
+  for(let x = start.x; x != start.x + (side.x * 15); x += side.x) {
     let point = new Vec(x, start.y);
     if(!rgb.checkAround(point, isWhite)) {
       return false;
     }
   }
 
-  for(let y = start.y; y != start.y + (side.y * 30); y += side.y) {
+  for(let y = start.y; y != start.y + (side.y * 15); y += side.y) {
     let point = new Vec(start.x, y);
     if(!rgb.checkAround(point, isWhite)) {
       return false;
@@ -240,16 +235,6 @@ const isViewPort = (rgb, start) => {
   }
 
   return true;
-};
-
-
-const checkLimit = (inner, outer) => {
-  let x = Math.max(0, inner.x);
-  let y = Math.max(0, inner.y);
-  let width = inner.x + inner.width > outer.width ? outer.width - inner.x : inner.width;
-  let height = inner.y + inner.height > outer.height ? outer.height - inner.y : inner.height;
-
-  return Display.create({x, y, width, height});
 };
 
 const createMainScreen = (viewPort, map, size) => {
@@ -265,7 +250,7 @@ const createMainScreen = (viewPort, map, size) => {
   let y = viewPort.y + heightRel;
 
   isViewPort.side = null;
-  return checkLimit({x, y, width, height}, map);
+  return Display.create({x, y, width, height});
 };
 
 
@@ -274,8 +259,10 @@ const stopApp = exports.stopApp = () => {
 };
 
 const startApp = exports.startApp = async (win) => {
+  state = true;
 
   const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
+
   w = workwindow;
   m = mouse;
   k = keyboard;
@@ -285,20 +272,21 @@ const startApp = exports.startApp = async (win) => {
   k.keySenderDelay = delay
 
   const display = Display.create(w.getView());
-  const map = Display.create({x: 1606, y: 766, width: 314, height: 314});
+
+  const map = Display.create({x: display.width - 314,
+                              y: display.height - 314,
+                              width: 314,
+                              height: 314});
+
   const viewPortSize = {width: 80, height: 46};
+
   const basesLimit = [
     {x: map.width - 70, y: 0, height: 70, width: 70},
     {x: 0, y: map.height - 70, width: 70, height: 70}
   ];
-  const size = 50;
-
-  mapTest = map;
 
   w.setForeground();
   win.show();
-
-  state = true;
 
     for(;state;) {
 
@@ -321,9 +309,9 @@ const startApp = exports.startApp = async (win) => {
 
       const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
 
-      .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(size)) &&
-                      !inRangeOf(enemy, mainScreen.enlarge(-10)) &&
-                      !basesLimit.some((zone) => inRangeOf(enemy, zone))
+      .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(options.outerLimit)) &&
+                       !inRangeOf(enemy, mainScreen.enlarge(options.innerLimit - viewPortSize.height)) &&
+                       !basesLimit.some((zone) => inRangeOf(enemy, zone))
                     )
       /*
       let {x, y} = enemies[0];
@@ -358,7 +346,7 @@ const getAngle = (pos) => {
   }
 
   let dist = pos.dist;
-  let scale = Math.min(1 - ((dist - 50) / 100), 1);
+  let scale = Math.min(1 - ((dist - options.innerLimit) / options.innerLimit + options.outerLimit), 1);
 
   return {scale, angle};
 };
@@ -376,5 +364,5 @@ const isRedandWhite = (color) => {
 const isWhite = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r > 250 && g > 250 && b > 250;
+  return r > 240 && g > 240 && b > 240;
 };
