@@ -26,13 +26,15 @@ body{
   position: absolute;
 }
 
-.options label {
-  display: flex;
-  flex-flow: column;
+.options {
+  padding: 10px;
+  width: 250px;
 }
+
 
 input[type=range] {
   margin-top: 7px;
+  display: block;
 }
 
 .saved_result {
