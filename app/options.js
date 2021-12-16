@@ -2,7 +2,7 @@ const { ipcRenderer } = require('electron');
 
 const form = document.querySelector('.options_form');
 const saveButton = document.querySelector('.save');
-const savedResult = document.querySelector('.saved_result'); 
+const savedResult = document.querySelector('.saved_result');
 
 let options;
 
@@ -11,7 +11,9 @@ const setOptions = (newOpts) => {
   for(let option of Object.keys(options)) {
     let input = form[option];
     input.value = options[option];
-    input.previousElementSibling.textContent = options[option];
+    if(input.type == `range`) {
+      input.previousElementSibling.textContent = options[option];
+    }
   }
 }
 

@@ -12,20 +12,30 @@
     <div class="options">
       <form class="options_form">
 
+        <div class="options_arrow">
+          <label>
+          Opacity: <span></span>
+          <input type="range" id=opacity min=0 max=1 step=0.1>
+          </label>
 
-      <label>
-      Opacity: <span></span>
-      <input type="range" id=opacity min=1 max=100>
-      </label>
+          <label>
+          Size: <span></span>px
+          <input type="range" id=size min=25 max=100>
+          </label>
 
-      <label>
-      Size: <span></span>px
-      <input type="range" id=size min=25 max=100>
-      </label>
+          <label>Radius: <span></span>px
+          <input type="range" id=radius min=100 max=300>
+          </label>
 
-      <label>Radius: <span></span>px
-      <input type="range" id=radius min=100 max=300>
-      </label>
+          <label>Color:
+          <select id=color>
+            <option value="arrow">Red</option>
+            <option value="arrow_blue">Blue</option>
+            <option value="arrow_green">Green</option>
+          </select>
+          </label>
+        </div>
+
 
       <label>
       Inner limit: <span></span>px
@@ -36,8 +46,6 @@
       Outer limit: <span></span>px
       <input type="range" id=outerLimit min=0 max=100>
       </label>
-
-
   </form>
   <button type="button" name="save" class=save>SAVE</button> <span class=saved_result></span>
     </div>
