@@ -115,12 +115,17 @@ class Rgb {
 
 }
 
+const centers = [
+  {pos: new Vec(-12, 0), startAngle: 0},
+  {pos: new Vec(12, 0),  startAngle: Math.PI },
+  {pos: new Vec(0, 12),  startAngle: Math.PI * 3 / 2},
+  {pos: new Vec(0, -12), startAngle: Math.PI / 2}
+];
 
 const isEnemy = (rgb, found) => {
-  let centers = [new Vec(-12, 0), new Vec(12, 0), new Vec(0, 12), new Vec(0, -12)];
-  for(let center of centers) {
-    center = center.plus(found);
-    for(let angle = 0, step = Math.PI * 2 / 8; angle < Math.PI * 2; angle += step) {
+  for(let {pos, startAngle} of centers) {
+    let center = pos.plus(found);
+    for(let angle = startAngle, step = Math.PI * 2 / 8; angle < startAngle + Math.PI * 2; angle += step) {
       let x = Math.round(center.x + (Math.cos(angle) * 12));
       let y = Math.round(center.y + (Math.sin(angle) * 12));
 
