@@ -4,11 +4,9 @@ html {
 
 *, *:before, *:after {
 box-sizing: inherit;
-}
-
-body, input {
   font: menu;
 }
+
 
 html, body {
   height: 100%;
@@ -27,16 +25,60 @@ body{
 }
 
 .options {
-  padding: 10px;
-  width: 250px;
+  padding: 0 10px 10px 10px;
+  position: relative;
+  top: -15px;
 }
 
+.options_form .pos {
+  width: 50px;
+}
+
+.options_form section {
+  padding: 5px;
+  border: 1px solid grey;
+}
+
+.options_form h3 {
+  font-size: 1.2em;
+  margin: 0;
+  padding: 2px 5px;
+  display: inline-block;
+  position: relative;
+  bottom: -10px;
+  left: 5px;
+  background-color: white;
+}
+
+.options_form label {
+  display: block;
+  margin: 10px 0;
+}
+
+select {
+  font-family: Menu;
+}
 
 input[type=range] {
-  margin-top: 7px;
   display: block;
+  margin: 0;
+  position: relative;
+  width: 100%;
 }
 
 .saved_result {
   color: green;
+  display: block;
+  text-align: center;
+}
+
+.buttons {
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 170px;
+}
+
+.buttons button {
+  width: 80px;
 }
