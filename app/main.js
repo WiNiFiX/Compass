@@ -1,5 +1,6 @@
 const {
         app,
+        dialog,
         BrowserWindow,
         ipcMain,
         Menu,
@@ -7,15 +8,15 @@ const {
         nativeImage,
         shell,
         Notification,
-        desktopCapturer
+        screen
        } = require('electron');
 const path = require('path');
-const { startApp, stopApp } = require('./bot.js');
 const { readFileSync, writeFile } = require('fs');
-
-let win, tray, icon, winOpt;
+const { startApp, stopApp, updateOptsApp } = require('./bot.js');
 
 let options = JSON.parse(readFileSync('./app/opt.json', 'utf8'));
+
+let win, tray, icon, winOpt;
 
 const createGameWindow = () => {
   return new Promise((resolve, reject) => {
@@ -43,22 +44,37 @@ const createGameWindow = () => {
   });
 };
 
-ipcMain.handle('save-options', (event, newOpts) => {
+const saveOptions = (event, newOpts) => {
   options = newOpts;
-  win.webContents.send('update-options', options);
+  updateOptsApp(options);
+  if(win) {
+    win.webContents.send('update-options', options);
+  }
   let value = JSON.stringify(options);
   writeFile('./app/opt.json', value, (error) => {
     if(error) throw error;
   });
+  saveOptions.saved = true;
+};
+saveOptions.saved = true;
+
+ipcMain.handle('save-options', saveOptions);
+ipcMain.handle('get-options', () => options);
+ipcMain.on('update-options', (event, newOpts) => {
+  saveOptions.saved = JSON.stringify(options) == JSON.stringify(newOpts);
 });
 
-ipcMain.handle('get-options', () => options);
+ipcMain.handle('get-center', () => {
+  let {size} = screen.getPrimaryDisplay();
+  return { x: size.width / 2, y: size.height / 2 };
+});
 
 const createWinOpt = () => {
   winOpt = new BrowserWindow({
     show: false,
-    width: 400,
-    height: 400,
+    width: 250,
+    height: 540,
+    resizable: false,
     icon,
     webPreferences: {
       contextIsolation: false,
@@ -69,7 +85,24 @@ const createWinOpt = () => {
   winOpt.loadFile(path.join(__dirname, 'options.html'));
 
   winOpt.once('ready-to-show', () => {
-    winOpt.show()
+    winOpt.show();
+  });
+
+  winOpt.on('close', (event) => {
+      if(!saveOptions.saved) {
+        let result = dialog.showMessageBoxSync(winOpt, {
+          type: 'question',
+          title: `Options`,
+          message: `The options haven't been saved, the changes will be lost. Are you sure you want to exit?`,
+          buttons: ['Yes', 'Cancel'],
+          defaultId: 0,
+          cancelId: 1
+        });
+
+        if(result) {
+          event.preventDefault();
+        }
+      }
   });
 
   winOpt.removeMenu();
@@ -98,8 +131,9 @@ const closeWin = () => {
 const createMenu = () => {
   const template = [
     {
-      label: 'START',
+      label: 'Start',
       async click() {
+        updateOptsApp(options);
         createGameWindow()
         .then(startApp)
         .catch(e => {
@@ -111,7 +145,7 @@ const createMenu = () => {
       enabled: !win
     },
     {
-      label: 'STOP',
+      label: 'Stop',
       click() {
           stopApp();
           closeWin();
