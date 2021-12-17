@@ -1,8 +1,6 @@
-const {Virtual, Hardware, getAllWindows, sleep} = require('keysender');
+const {Hardware, getAllWindows} = require('keysender');
 
-let w, m, k, win, state;
-const delay = 75;
-let options;
+let w, state, options;
 
 const updateOptsApp = exports.updateOptsApp = (newOpts) => {
   options = newOpts;
@@ -116,7 +114,6 @@ class Rgb {
  }
 
 }
-
 
 
 const isEnemy = (rgb, found) => {
@@ -259,17 +256,11 @@ const stopApp = exports.stopApp = () => {
 };
 
 const startApp = exports.startApp = async (win) => {
-  state = true;
 
   const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
 
   w = workwindow;
-  m = mouse;
-  k = keyboard;
-
-  m.buttonTogglerDelay = delay;
-  k.keyTogglerDelay = delay;
-  k.keySenderDelay = delay
+  state = true;
 
   const display = Display.create(w.getView());
 
@@ -313,11 +304,6 @@ const startApp = exports.startApp = async (win) => {
                        !inRangeOf(enemy, mainScreen.enlarge(options.innerLimit - viewPortSize.height)) &&
                        !basesLimit.some((zone) => inRangeOf(enemy, zone))
                     )
-      /*
-      let {x, y} = enemies[0];
-      m.moveTo(map.x + viewPort.x, map.y + viewPort.y);
-      */
-
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
@@ -346,8 +332,7 @@ const getAngle = (pos) => {
   }
 
   let dist = pos.dist;
-  let scale = Math.min(1 - ((dist - options.innerLimit) / options.innerLimit + options.outerLimit), 1);
-
+  let scale = options.scale ? Math.min(1 - ((dist - options.innerLimit) / (options.outerLimit * 2)), 1) : 1;
   return {scale, angle};
 };
 
