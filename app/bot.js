@@ -1,7 +1,7 @@
-const {Hardware, getAllWindows} = require('keysender');
+const {Hardware, getAllWindows, sleep} = require('keysender');
 
-let w, state, options;
-
+let w, m, state, options;
+let testMap;
 const updateOptsApp = exports.updateOptsApp = (newOpts) => {
   options = newOpts;
 };
@@ -117,18 +117,24 @@ class Rgb {
 
 
 const isEnemy = (rgb, found) => {
-  let center = found.plus(new Vec(-12, 0));
+  let centers = [new Vec(-12, 0), new Vec(12, 0), new Vec(0, 12), new Vec(0, -12)];
+  for(let center of centers) {
+    let oldCenter = center;
+    center = center.plus(found);
+    for(let angle = 0, step = Math.PI * 2 / 8; angle < Math.PI * 2; angle += step) {
+      let x = Math.round(center.x + (Math.cos(angle) * 12));
+      let y = Math.round(center.y + (Math.sin(angle) * 12));
 
-  for(let angle = 0, step = Math.PI * 2 / 8; angle < Math.PI * 2; angle += step) {
-    let x = Math.round(center.x + (Math.cos(angle) * 12));
-    let y = Math.round(center.y + (Math.sin(angle) * 12));
 
-    let point = new Vec(x, y);
-    if(!rgb.checkAround(point, isRedandWhite)) {
-      return false;
-     }
+      let point = new Vec(x, y);
+      if(!rgb.checkAround(point, isRedandWhite)) {
+        center = false;
+      }
+    }
+    if(center) {
+      return center;
+    }
   }
-  return center;
 };
 
 
@@ -260,6 +266,8 @@ const startApp = exports.startApp = async (win) => {
   const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
 
   w = workwindow;
+  m = mouse;
+
   state = true;
 
   const display = Display.create(w.getView());
@@ -268,7 +276,7 @@ const startApp = exports.startApp = async (win) => {
                               y: display.height - 314,
                               width: 314,
                               height: 314});
-
+  testMap = map;
   const viewPortSize = {width: 80, height: 46};
 
   const basesLimit = [
@@ -298,7 +306,7 @@ const startApp = exports.startApp = async (win) => {
 
       const mainScreen = createMainScreen(viewPort, map, viewPortSize);
 
-      const enemies = mapRgb.findColors(isRedandWhite, isEnemy)
+      const enemies = mapRgb.findColors(isRed, isEnemy)
 
       .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(options.outerLimit)) &&
                        !inRangeOf(enemy, mainScreen.enlarge(options.innerLimit - viewPortSize.height)) &&
