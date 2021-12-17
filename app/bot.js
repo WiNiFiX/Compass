@@ -119,7 +119,6 @@ class Rgb {
 const isEnemy = (rgb, found) => {
   let centers = [new Vec(-12, 0), new Vec(12, 0), new Vec(0, 12), new Vec(0, -12)];
   for(let center of centers) {
-    let oldCenter = center;
     center = center.plus(found);
     for(let angle = 0, step = Math.PI * 2 / 8; angle < Math.PI * 2; angle += step) {
       let x = Math.round(center.x + (Math.cos(angle) * 12));
@@ -127,8 +126,9 @@ const isEnemy = (rgb, found) => {
 
 
       let point = new Vec(x, y);
-      if(!rgb.checkAround(point, isRedandWhite)) {
+      if(!rgb.checkAround(point, isRed)) {
         center = false;
+        break;
       }
     }
     if(center) {
