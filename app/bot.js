@@ -121,16 +121,22 @@ const centers = [
   {pos: new Vec(0, 12),  startAngle: Math.PI * 3 / 2},
   {pos: new Vec(0, -12), startAngle: Math.PI / 2}
 ];
+/*
+TESTS:
+1. 8 / MATH.PI / isRed / 110
+2. 8 / MATH.PI * 2 / isRedandWhite / 75
+*/
+
 
 const isEnemy = (rgb, found) => {
   for(let {pos, startAngle} of centers) {
     let center = pos.plus(found);
-    for(let angle = startAngle, step = Math.PI * 2 / 16; angle < startAngle + Math.PI; angle += step) {
-      let x = Math.floor(center.x + (Math.cos(angle) * 12));
-      let y = Math.floor(center.y + (Math.sin(angle) * 12));
+    for(let angle = startAngle, step = Math.PI * 2 / 8; angle < startAngle + Math.PI * 2; angle += step) {
+      let x = Math.round(center.x + (Math.cos(angle) * 12));
+      let y = Math.round(center.y + (Math.sin(angle) * 12));
 
       let point = new Vec(x, y);
-      if(!rgb.checkAround(point, isRed)) {
+      if(!rgb.checkAround(point, isRedandWhite)) {
         center = false;
         break;
       }
@@ -275,12 +281,12 @@ const startApp = exports.startApp = async (win) => {
   state = true;
 
   const display = Display.create(w.getView());
-  const map = Display.create({x: display.width - 314,
-                              y: display.height - 314,
-                              width: 314,
-                              height: 314});
+  const map = display.rel(.837, .709, .163, .290);
+  console.log(map);
   testMap = map;
-  const viewPortSize = {width: 80, height: 46};
+
+  const viewPortSize = {width: .041 * display.width,
+                        height: .042 * display.height};
 
   const basesLimit = [
     {x: map.width - 70, y: 0, height: 70, width: 70},
@@ -301,17 +307,23 @@ const startApp = exports.startApp = async (win) => {
 
       const mapRgb = map.getRgb();
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
-
       if(!viewPort) {
         continue
+      } else {
+        viewPort.y += 5;
       }
 
       const mainScreen = createMainScreen(viewPort, map, viewPortSize);
+
+
       const enemies = mapRgb.findColors(isRed, isEnemy)
       .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(options.outerLimit)) &&
                        !inRangeOf(enemy, mainScreen.enlarge(options.innerLimit - viewPortSize.height)) &&
                        !basesLimit.some((zone) => inRangeOf(enemy, zone))
                     )
+
+
+
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
@@ -347,7 +359,7 @@ const getAngle = (pos) => {
 const isRed = (color) => {
   if(!color) return;
   let [r, g, b] = color;
-  return r - g > 110 && r - b > 110;
+  return r - g > 75 && r - b > 75;
 };
 
 const isRedandWhite = (color) => {
