@@ -14,7 +14,7 @@ const path = require('path');
 const { readFileSync, writeFile } = require('fs');
 const { startApp, stopApp, updateOptsApp } = require('./bot.js');
 
-let options = JSON.parse(readFileSync('./app/opt.json', 'utf8'));
+let options = JSON.parse(readFileSync(path.join(__dirname, 'opt.json'), 'utf8'));
 
 let win, tray, icon, winOpt;
 
@@ -51,7 +51,7 @@ const saveOptions = (event, newOpts) => {
     win.webContents.send('update-options', options);
   }
   let value = JSON.stringify(options);
-  writeFile('./app/opt.json', value, (error) => {
+  writeFile(path.join(__dirname, 'opt.json'), value, (error) => {
     if(error) throw error;
   });
   saveOptions.saved = true;
