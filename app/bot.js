@@ -1,6 +1,6 @@
 const {Hardware, getAllWindows} = require('keysender');
 
-let w, m, state, options;
+let w, state, options;
 
 const updateOptsApp = exports.updateOptsApp = (newOpts) => {
   options = newOpts;
