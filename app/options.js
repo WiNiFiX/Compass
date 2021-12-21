@@ -7,7 +7,7 @@ const getCenter = document.querySelector('#getCenter');
 const defaultData = {"size":35,
                      "opacity":0.6,
                      "radius":150,
-                     "innerLimit":35,
+                     "innerLimit":40,
                      "outerLimit":50,
                      "color":0,
                      "scale":1,
