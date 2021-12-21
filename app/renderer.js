@@ -34,10 +34,12 @@ const renderEnemy = ({scale, angle}) => {
       count = 0;
     };
 
+
     if(enemies.length > 0) {
       compassArea.innerHTML = ``;
       enemies.map(renderEnemy).forEach(node => compassArea.append(node));
     } else {
+      compassArea.innerHTML = ``;
       count += 1;
     }
   });
