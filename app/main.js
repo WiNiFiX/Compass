@@ -181,7 +181,7 @@ const createMenu = () => {
 const createTray = () => {
   icon = nativeImage.createFromPath(path.join(__dirname, '/img/arr.png'));
   tray = new Tray(icon);
-  tray.setToolTip('LoL Compass v1.0');
+  tray.setToolTip('Compass v1.0');
   tray.setContextMenu(createMenu());
 };
 
