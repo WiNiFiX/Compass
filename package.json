@@ -1,7 +1,7 @@
 {
-  "name": "loldetect",
+  "name": "Compass",
   "version": "1.0.0",
-  "description": "Analyzer that detects enemies around your main window",
+  "description": "An overlay application for League of Legends, which detects visible enemies around the viewport.",
   "main": "./app/main.js",
   "scripts": {
     "start": "electron .",
