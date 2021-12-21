@@ -189,7 +189,6 @@ const errorNote = ({message}) => {
   new Notification({
     title: `Error`,
     body: message,
-    critical: 'critical',
     icon
   }).show();
 };
@@ -259,6 +258,11 @@ const createTray = () => {
   tray = new Tray(icon);
   tray.setToolTip('Compass v1.0');
   tray.setContextMenu(createMenu());
+  new Notification({
+    title: `Compass`,
+    body: `Compass is running...`,
+    icon
+  }).show();
 };
 
 
