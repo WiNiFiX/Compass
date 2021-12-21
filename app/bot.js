@@ -1,7 +1,7 @@
-const {Hardware, getAllWindows, sleep} = require('keysender');
+const {Hardware, getAllWindows} = require('keysender');
 
 let w, m, state, options;
-let testMap;
+
 const updateOptsApp = exports.updateOptsApp = (newOpts) => {
   options = newOpts;
 };
@@ -121,17 +121,11 @@ const centers = [
   {pos: new Vec(0, 12),  startAngle: Math.PI * 3 / 2},
   {pos: new Vec(0, -12), startAngle: Math.PI / 2}
 ];
-/*
-TESTS:
-1. 8 / MATH.PI / isRed / 110
-2. 8 / MATH.PI * 2 / isRedandWhite / 75
-*/
-
 
 const isEnemy = (rgb, found) => {
   for(let {pos, startAngle} of centers) {
     let center = pos.plus(found);
-    for(let angle = startAngle, step = Math.PI * 2 / 8; angle < startAngle + Math.PI * 2; angle += step) {
+    for(let angle = startAngle, step = Math.PI * 2 / 16; angle < startAngle + Math.PI * 2; angle += step) {
       let x = Math.round(center.x + (Math.cos(angle) * 12));
       let y = Math.round(center.y + (Math.sin(angle) * 12));
 
@@ -223,7 +217,7 @@ const findSide = (area, {x, y}) => {
 const isViewPort = (rgb, start) => {
 
   if(!isViewPort.side) {
-    for(let x = start.x; x < start.x + 20; x++) {
+    for(let x = start.x; x < start.x + 25; x++) {
       let point = new Vec(x, start.y);
       if(!rgb.checkAround(point, isWhite)) {
         return false;
@@ -233,14 +227,14 @@ const isViewPort = (rgb, start) => {
   }
   let side = isViewPort.side
 
-  for(let x = start.x; x != start.x + (side.x * 15); x += side.x) {
+  for(let x = start.x; x != start.x + (side.x * 25); x += side.x) {
     let point = new Vec(x, start.y);
     if(!rgb.checkAround(point, isWhite)) {
       return false;
     }
   }
 
-  for(let y = start.y; y != start.y + (side.y * 15); y += side.y) {
+  for(let y = start.y; y != start.y + (side.y * 25); y += side.y) {
     let point = new Vec(start.x, y);
     if(!rgb.checkAround(point, isWhite)) {
       return false;
@@ -259,6 +253,7 @@ const createMainScreen = (viewPort, map, size) => {
   const widthRel = side.x < 0 ? -width : 0;
   const heightRel = side.y < 0 ? -height: 0;
 
+
   let x = viewPort.x + widthRel;
   let y = viewPort.y + heightRel;
 
@@ -273,25 +268,25 @@ const stopApp = exports.stopApp = () => {
 
 const startApp = exports.startApp = async (win) => {
 
-  const {workwindow, mouse, keyboard} = findTheGame(`League of Legends`);
-
+  const {workwindow} = findTheGame(`League of Legends`);
   w = workwindow;
-  m = mouse;
 
   state = true;
 
   const display = Display.create(w.getView());
   const map = display.rel(.837, .709, .163, .290);
-  console.log(map);
-  testMap = map;
 
   const viewPortSize = {width: .041 * display.width,
                         height: .042 * display.height};
+  const viewPortShift = new Vec(0, 5);
 
+  const baseLimitX = display.width * .0364;
+  const baseLimitY = display.height * .0648;
   const basesLimit = [
-    {x: map.width - 70, y: 0, height: 70, width: 70},
-    {x: 0, y: map.height - 70, width: 70, height: 70}
+    {x: map.width - baseLimitX, y: 0, width: baseLimitX, height: baseLimitY},
+    {x: 0, y: map.height - baseLimitY, width: baseLimitX, height: baseLimitY}
   ];
+
 
   w.setForeground();
   win.show();
@@ -309,21 +304,13 @@ const startApp = exports.startApp = async (win) => {
       const viewPort = mapRgb.findColor(isWhite, isViewPort);
       if(!viewPort) {
         continue
-      } else {
-        viewPort.y += 5;
       }
 
-      const mainScreen = createMainScreen(viewPort, map, viewPortSize);
-
-
+      const mainScreen = createMainScreen(viewPort.plus(viewPortShift), map, viewPortSize);
       const enemies = mapRgb.findColors(isRed, isEnemy)
       .filter(enemy => inRangeOf(enemy, mainScreen.enlarge(options.outerLimit)) &&
                        !inRangeOf(enemy, mainScreen.enlarge(options.innerLimit - viewPortSize.height)) &&
-                       !basesLimit.some((zone) => inRangeOf(enemy, zone))
-                    )
-
-
-
+                       !basesLimit.some((zone) => inRangeOf(enemy, zone)))
       .map(enemy => getRel(enemy, mainScreen.center))
       .map(getAngle)
 
